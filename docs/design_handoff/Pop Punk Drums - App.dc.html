@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Saira+Stencil+One&family=Space+Grotesk:wght@400;500;600;700&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;height:100%;background:#222226;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif}
+  *{box-sizing:border-box}
+  [data-grid]::-webkit-scrollbar,[data-rail-body]::-webkit-scrollbar,[data-arrangement]::-webkit-scrollbar,[data-inspector]::-webkit-scrollbar{height:8px;width:8px}
+  [data-rail-body]::-webkit-scrollbar-thumb,[data-inspector]::-webkit-scrollbar-thumb,[data-arrangement]::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:4px}
+  @keyframes ppd-spin{to{transform:rotate(360deg)}}
+</style>
+</helmet>
+
+<div data-app data-screen-label="App window" style="--bg:#0e0e10;--panel:#161619;--panel2:#1e1e23;--fg:#ECEAE6;--muted:#928e86;--line:rgba(255,255,255,.09);--accent:#7E6CD6;--accent2:#6E5EC2;--gold:#d8b34a;--ok:#46c06a;width:1280px;height:800px;position:relative;overflow:hidden;border-radius:12px;color:var(--fg);font-family:'Space Grotesk',sans-serif;background:radial-gradient(circle at 18% 8%,rgba(255,255,255,.045),transparent 42%),radial-gradient(circle at 88% 96%,rgba(0,0,0,.6),transparent 52%),linear-gradient(150deg,#17171b,#0b0b0d);box-shadow:0 30px 90px rgba(0,0,0,.55)">
+
+  <!-- texture overlays -->
+  <div data-mottle style="position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.6;background:radial-gradient(circle at 12% 20%,rgba(0,0,0,.55),transparent 26%),radial-gradient(circle at 80% 10%,rgba(0,0,0,.45),transparent 30%),radial-gradient(circle at 62% 84%,rgba(0,0,0,.6),transparent 32%),radial-gradient(circle at 28% 72%,rgba(255,255,255,.05),transparent 24%),radial-gradient(circle at 92% 60%,rgba(0,0,0,.5),transparent 28%)"></div>
+  <div style="position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.62;background:repeating-linear-gradient(95deg,rgba(255,255,255,.028) 0 2px,transparent 2px 7px),repeating-linear-gradient(-1.3deg,rgba(0,0,0,.3) 0 1px,transparent 1px 5px),repeating-linear-gradient(88deg,rgba(0,0,0,.14) 0 1px,transparent 1px 9px)"></div>
+  <div data-grain style="position:absolute;inset:0;pointer-events:none;z-index:0;mix-blend-mode:overlay;opacity:.22;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E&quot;)"></div>
+
+  <!-- ===== TITLE BAR ===== -->
+  <div style="height:46px;display:flex;align-items:center;gap:14px;padding:0 14px;border-bottom:1px solid var(--line);position:relative;z-index:2">
+    <div style="display:flex;gap:8px"><span style="width:12px;height:12px;border-radius:50%;background:#ff5f57"></span><span style="width:12px;height:12px;border-radius:50%;background:#febc2e"></span><span style="width:12px;height:12px;border-radius:50%;background:#28c840"></span></div>
+    <div style="position:relative;margin-left:4px">
+      <div style="position:absolute;left:-8px;top:-7px;right:-8px;bottom:-6px;background:radial-gradient(ellipse at 40% 50%,rgba(216,179,74,.35),transparent 70%);filter:blur(2px)"></div>
+      <div style="position:relative;display:inline-block;background:#f1ece0;padding:3px 12px 4px;transform:rotate(-1.4deg);clip-path:polygon(0% 16%,8% 0,22% 10%,38% 2%,55% 9%,72% 1%,88% 8%,100% 12%,97% 84%,84% 100%,66% 90%,48% 100%,30% 91%,12% 99%,2% 82%)">
+        <span style="font-family:'Saira Stencil One',sans-serif;font-size:14px;color:#16110b;letter-spacing:.02em">POP&nbsp;PUNK&nbsp;DRUMS</span>
+      </div>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+      <div style="display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:5px 6px 5px 12px">
+        <span style="font:500 10px 'IBM Plex Mono',monospace;color:var(--muted);letter-spacing:.08em">BPM</span>
+        <span data-bpm style="font:600 16px 'IBM Plex Mono',monospace;color:var(--fg);min-width:34px;text-align:center">178</span>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <button data-bpm-up style="border:none;background:var(--panel);color:var(--muted);cursor:pointer;border-radius:4px;width:20px;height:13px;font-size:8px;line-height:1;display:flex;align-items:center;justify-content:center">▲</button>
+          <button data-bpm-dn style="border:none;background:var(--panel);color:var(--muted);cursor:pointer;border-radius:4px;width:20px;height:13px;font-size:8px;line-height:1;display:flex;align-items:center;justify-content:center">▼</button>
+        </div>
+      </div>
+      <button data-bpm-suggest title="Use this profile's suggested tempo" style="display:none;align-items:center;gap:5px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;border-radius:8px;padding:7px 10px;font:500 11px 'IBM Plex Mono',monospace"></button>
+      <button data-theme style="border:1px solid var(--line);background:var(--panel2);color:var(--muted);cursor:pointer;border-radius:8px;padding:7px 11px;font:500 11px 'IBM Plex Mono',monospace">○ Light</button>
+      <button data-export style="border:none;background:var(--accent);color:#fff;cursor:pointer;border-radius:8px;padding:8px 16px;font:600 12px 'Space Grotesk';display:flex;align-items:center;gap:7px;box-shadow:0 2px 10px rgba(126,108,214,.4)"><span style="font-size:13px">⤓</span>Export .mid</button>
+    </div>
+  </div>
+
+  <!-- ===== MODE TABS ===== -->
+  <div style="height:56px;display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:1px solid var(--line);position:relative;z-index:2">
+    <button data-mode-tab="generate" style="display:flex;align-items:center;gap:9px;border:1px solid var(--accent);background:rgba(126,108,214,.16);color:var(--fg);cursor:pointer;border-radius:9px;padding:9px 18px;font:600 14px 'Space Grotesk'"><span style="font-size:15px">⌁</span>Generate</button>
+    <button data-mode-tab="drop" style="display:flex;align-items:center;gap:9px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;border-radius:9px;padding:9px 18px;font:600 14px 'Space Grotesk'"><span style="font-size:15px">⤓</span>Drop audio</button>
+    <div data-fit-banner style="display:none;align-items:center;gap:8px;background:rgba(70,192,106,.12);border:1px solid rgba(70,192,106,.35);border-radius:8px;padding:7px 12px;font:500 12px 'Space Grotesk';color:#7fdb9a"><span>✓</span><span data-fit-text>Fitted to track</span></div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+      <span style="font:500 11px 'IBM Plex Mono',monospace;color:var(--muted)">seed</span>
+      <span data-seed style="font:600 12px 'IBM Plex Mono',monospace;color:var(--fg);background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px 9px">1</span>
+      <button data-regen style="display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel2);color:var(--fg);cursor:pointer;border-radius:8px;padding:7px 13px;font:600 12px 'Space Grotesk'"><span data-regen-ico style="font-size:13px;display:inline-block">↻</span>Regenerate</button>
+    </div>
+  </div>
+
+  <!-- ===== BODY ===== -->
+  <div style="display:flex;position:absolute;top:102px;bottom:50px;left:0;right:0;z-index:2">
+
+    <!-- LEFT RAIL -->
+    <div style="width:252px;border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0">
+      <div style="display:flex;gap:4px;padding:12px 12px 8px">
+        <button data-rail-tab="profiles" style="flex:1;border:none;cursor:pointer;border-radius:7px;padding:7px;font:600 12px 'Space Grotesk';background:var(--panel2);color:var(--fg)">Profiles</button>
+        <button data-rail-tab="grooves" style="flex:1;border:none;cursor:pointer;border-radius:7px;padding:7px;font:600 12px 'Space Grotesk';background:transparent;color:var(--muted)">Grooves</button>
+      </div>
+      <div style="padding:0 12px 10px">
+        <input data-search placeholder="Search…" style="width:100%;background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:8px 11px;color:var(--fg);font:500 12px 'Space Grotesk';outline:none">
+      </div>
+      <div data-rail-body style="flex:1;overflow-y:auto;padding:0 8px 12px"></div>
+    </div>
+
+    <!-- CENTER -->
+    <div style="flex:1;display:flex;flex-direction:column;min-height:0;min-width:0">
+
+      <!-- GENERATE VIEW -->
+      <div data-view="generate" style="flex:1;display:flex;flex-direction:column;min-height:0">
+        <!-- arrangement -->
+        <div style="padding:14px 18px 12px;border-bottom:1px solid var(--line)">
+          <div style="display:flex;align-items:center;margin-bottom:11px">
+            <span style="font-family:'Special Elite',monospace;font-size:13px;letter-spacing:.04em;color:var(--fg)">ARRANGEMENT</span>
+            <span data-total-bars style="margin-left:10px;font:500 11px 'IBM Plex Mono',monospace;color:var(--muted)">48 bars</span>
+            <button data-add-section style="margin-left:auto;border:1px dashed var(--line);background:transparent;color:var(--muted);cursor:pointer;border-radius:7px;padding:6px 11px;font:600 11px 'Space Grotesk'">+ Section</button>
+          </div>
+          <div data-arrangement style="display:flex;gap:8px;overflow-x:auto;padding-bottom:6px"></div>
+        </div>
+        <!-- grid -->
+        <div style="flex:1;display:flex;flex-direction:column;min-height:0;padding:16px 18px">
+          <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:14px">
+            <span data-section-role style="font-family:'Special Elite',monospace;font-size:15px;color:var(--accent);letter-spacing:.03em">VERSE</span>
+            <span data-section-groove style="font:600 14px 'Space Grotesk';color:var(--fg)">double_bass_verse</span>
+            <span data-section-meta style="font:500 11px 'IBM Plex Mono',monospace;color:var(--muted)">· 8 bars</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div style="display:flex;flex-direction:column;gap:7px;padding-top:18px">
+              <div style="height:32px;display:flex;align-items:center;font:400 10px 'Special Elite',monospace;color:var(--muted);width:34px">CR</div>
+              <div style="height:32px;display:flex;align-items:center;font:400 10px 'Special Elite',monospace;color:var(--muted);width:34px">HAT</div>
+              <div style="height:32px;display:flex;align-items:center;font:400 10px 'Special Elite',monospace;color:var(--muted);width:34px">SN</div>
+              <div style="height:32px;display:flex;align-items:center;font:400 10px 'Special Elite',monospace;color:var(--muted);width:34px">TOM</div>
+              <div style="height:32px;display:flex;align-items:center;font:400 10px 'Special Elite',monospace;color:var(--muted);width:34px">KK</div>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div data-ruler style="display:flex;gap:3px;margin-bottom:7px"></div>
+              <div data-grid style="display:flex;gap:3px;align-items:stretch"></div>
+            </div>
+          </div>
+        </div>
+        <!-- transport -->
+        <div style="height:62px;border-top:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:0 18px">
+          <button data-play style="border:none;cursor:pointer;width:40px;height:40px;border-radius:10px;background:var(--accent);color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 2px 12px rgba(126,108,214,.45)"><span data-ico="play" style="display:none">▶</span><span data-ico="pause">❚❚</span></button>
+          <button data-stop style="border:1px solid var(--line);cursor:pointer;width:40px;height:40px;border-radius:10px;background:var(--panel2);color:var(--muted);font-size:11px;display:flex;align-items:center;justify-content:center;flex:none">■</button>
+          <button data-loop style="border:1px solid var(--accent);cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(126,108,214,.14);color:var(--accent);font-size:14px;display:flex;align-items:center;justify-content:center;flex:none">↻</button>
+          <div style="flex:1;height:7px;border-radius:4px;background:var(--panel2);overflow:hidden"><div data-progress style="height:100%;width:0;background:var(--accent);border-radius:4px"></div></div>
+          <span data-pos style="font:500 12px 'IBM Plex Mono',monospace;color:var(--muted);min-width:78px">1 bar loop</span>
+          <span style="font:400 10px 'Special Elite',monospace;color:var(--muted);background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px 9px">GM PREVIEW</span>
+        </div>
+      </div>
+
+      <!-- DROP VIEW -->
+      <div data-view="drop" data-screen-label="Drop audio" style="flex:1;display:none;flex-direction:column;min-height:0;padding:22px">
+        <!-- dropzone -->
+        <div data-drop-stage="zone" style="flex:1;display:flex;flex-direction:column">
+          <div data-dropzone style="flex:1;border:2px dashed var(--line);border-radius:14px;background:rgba(255,255,255,.015);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;cursor:pointer;transition:border-color .15s,background .15s">
+            <div style="font-size:44px;color:var(--accent)">⤓</div>
+            <div style="font:600 19px 'Space Grotesk';color:var(--fg)">Drop an audio file to fit drums to it</div>
+            <div style="font:400 13px 'Space Grotesk';color:var(--muted)">WAV · MP3 · AIFF &nbsp;·&nbsp; or click to browse</div>
+            <div style="margin-top:8px;max-width:520px;text-align:center;font:400 11px 'Space Grotesk';color:var(--muted);line-height:1.5">Analysis is signal-based — reliable on tight / click-tracked material, looser on rubato. You'll be able to correct the detected tempo and sections before generating.</div>
+          </div>
+        </div>
+        <!-- analyzing -->
+        <div data-drop-stage="analyzing" style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:18px">
+          <div style="width:34px;height:34px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:ppd-spin .8s linear infinite"></div>
+          <div data-analyze-step style="font:600 15px 'Space Grotesk';color:var(--fg)">Detecting tempo…</div>
+          <div style="width:280px;height:5px;border-radius:3px;background:var(--panel2);overflow:hidden"><div data-analyze-bar style="height:100%;width:0;background:var(--accent);border-radius:3px;transition:width .25s"></div></div>
+        </div>
+        <!-- detected -->
+        <div data-drop-stage="detected" style="display:none;flex:1;flex-direction:column;min-height:0">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+            <span style="font-family:'Special Elite',monospace;font-size:14px;color:var(--fg)">DETECTED</span>
+            <span data-drop-file style="font:500 12px 'IBM Plex Mono',monospace;color:var(--muted)">my_demo.wav</span>
+            <button data-drop-reset style="margin-left:auto;border:1px solid var(--line);background:var(--panel2);color:var(--muted);cursor:pointer;border-radius:7px;padding:6px 12px;font:600 11px 'Space Grotesk'">↺ Choose another</button>
+          </div>
+          <div style="display:flex;gap:14px;margin-bottom:18px">
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 16px;display:flex;align-items:center;gap:12px">
+              <div><div style="font:500 10px 'IBM Plex Mono',monospace;color:var(--muted);letter-spacing:.06em">TEMPO · detected</div><div style="display:flex;align-items:baseline;gap:4px;margin-top:3px"><span data-drop-bpm style="font:600 26px 'IBM Plex Mono',monospace;color:var(--fg)">174</span><span style="font:500 12px 'Space Grotesk';color:var(--muted)">BPM</span></div></div>
+              <div style="display:flex;flex-direction:column;gap:3px">
+                <button data-drop-bpm-up style="border:1px solid var(--line);background:var(--panel2);color:var(--muted);cursor:pointer;border-radius:5px;width:26px;height:18px;font-size:9px">▲</button>
+                <button data-drop-bpm-dn style="border:1px solid var(--line);background:var(--panel2);color:var(--muted);cursor:pointer;border-radius:5px;width:26px;height:18px;font-size:9px">▼</button>
+              </div>
+            </div>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 16px;flex:1">
+              <div style="font:500 10px 'IBM Plex Mono',monospace;color:var(--muted);letter-spacing:.06em;margin-bottom:9px">ALIGNMENT &nbsp; <span style="color:var(--muted);opacity:.7">— was the take cut to a click?</span></div>
+              <div style="display:flex;gap:6px">
+                <button data-align="grid" style="border:1px solid var(--accent);background:rgba(126,108,214,.16);color:var(--fg);cursor:pointer;border-radius:7px;padding:7px 13px;font:600 12px 'Space Grotesk'">Fixed grid</button>
+                <button data-align="beats" style="border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;border-radius:7px;padding:7px 13px;font:600 12px 'Space Grotesk'">Follow detected beats</button>
+              </div>
+            </div>
+          </div>
+          <div style="font:500 10px 'IBM Plex Mono',monospace;color:var(--muted);letter-spacing:.06em;margin-bottom:9px">SECTION MAP &nbsp;<span style="opacity:.7">— from energy + structure · click a role to change it</span></div>
+          <div data-drop-sections style="flex:1;display:flex;gap:8px;align-items:flex-end;overflow-x:auto;min-height:0;padding-bottom:8px"></div>
+          <button data-drop-build style="margin-top:16px;align-self:flex-start;border:none;background:var(--accent);color:#fff;cursor:pointer;border-radius:9px;padding:11px 22px;font:600 14px 'Space Grotesk';display:flex;align-items:center;gap:9px;box-shadow:0 2px 12px rgba(126,108,214,.4)">Build drums to fit <span style="font-size:14px">▸</span></button>
+        </div>
+      </div>
+
+      <!-- BROWSER VIEW -->
+      <div data-view="browser" data-screen-label="Groove browser" style="flex:1;display:none;flex-direction:column;min-height:0;padding:20px 24px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:7px">
+          <span data-browser-kind style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:var(--accent);border:1px solid var(--accent);border-radius:5px;padding:3px 9px">GROOVE</span>
+          <span data-browser-name style="font-family:'Special Elite',monospace;font-size:25px;color:var(--fg);letter-spacing:.02em">skank</span>
+        </div>
+        <div data-browser-desc style="font:500 13px 'Space Grotesk';color:var(--muted);margin-bottom:22px">Double-time polka — snare on every up</div>
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <div style="display:flex;flex-direction:column;gap:7px;padding-top:18px">
+            <div style="height:32px;display:flex;align-items:center;font:400 10px 'Special Elite',monospace;color:var(--muted);width:34px">CR</div>
+            <div style="height:32px;display:flex;align-items:center;font:400 10px 'Special Elite',monospace;color:var(--muted);width:34px">HAT</div>
+            <div style="height:32px;display:flex;align-items:center;font:400 10px 'Special Elite',monospace;color:var(--muted);width:34px">SN</div>
+            <div style="height:32px;display:flex;align-items:center;font:400 10px 'Special Elite',monospace;color:var(--muted);width:34px">TOM</div>
+            <div style="height:32px;display:flex;align-items:center;font:400 10px 'Special Elite',monospace;color:var(--muted);width:34px">KK</div>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div data-browser-ruler style="display:flex;gap:3px;margin-bottom:7px"></div>
+            <div data-browser-grid style="display:flex;gap:3px;align-items:stretch"></div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;margin:22px 0">
+          <button data-browser-play style="border:none;cursor:pointer;border-radius:9px;background:var(--accent);color:#fff;padding:10px 18px;font:600 13px 'Space Grotesk';display:flex;align-items:center;gap:8px;box-shadow:0 2px 12px rgba(126,108,214,.4)"><span data-bico="play">▶</span> Preview</button>
+          <div style="flex:1;max-width:340px;height:6px;border-radius:4px;background:var(--panel2);overflow:hidden"><div data-browser-progress style="height:100%;width:0;background:var(--accent);border-radius:4px"></div></div>
+          <span style="font:400 10px 'Special Elite',monospace;color:var(--muted)">1-bar loop · GM stand-in</span>
+        </div>
+        <div style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.12em;color:var(--muted);margin-bottom:11px">USED BY</div>
+        <div data-browser-usedby style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:auto"></div>
+        <div style="display:flex;gap:10px;margin-top:18px">
+          <button data-browser-use style="border:1px solid var(--accent);background:rgba(126,108,214,.14);color:var(--fg);cursor:pointer;border-radius:9px;padding:10px 18px;font:600 13px 'Space Grotesk';display:flex;align-items:center;gap:8px"><span style="font-size:14px">⤵</span> <span data-browser-use-label>Use in current section</span></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT INSPECTOR -->
+    <div data-inspector style="width:304px;border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0;overflow-y:auto">
+      <!-- section props -->
+      <div style="padding:16px 16px 14px;border-bottom:1px solid var(--line)">
+        <div style="font-family:'Special Elite',monospace;font-size:13px;letter-spacing:.04em;color:var(--fg);margin-bottom:13px">SECTION</div>
+        <div style="font:500 11px 'Space Grotesk';color:var(--muted);margin-bottom:6px">Groove</div>
+        <div data-groove-wrap style="position:relative;margin-bottom:13px">
+          <button data-groove-btn style="width:100%;display:flex;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px 12px;color:var(--fg);cursor:pointer;font:600 13px 'Space Grotesk'"><span data-groove-label>double_bass_verse</span><span style="color:var(--muted);font-size:10px">▾</span></button>
+          <div data-groove-menu style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;max-height:240px;overflow-y:auto;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:5px;z-index:9;box-shadow:0 12px 30px rgba(0,0,0,.5)"></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:13px">
+          <div style="flex:1"><div style="font:500 11px 'Space Grotesk';color:var(--muted);margin-bottom:6px">Bars</div>
+            <div style="display:flex;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden">
+              <button data-bars-dn style="border:none;background:transparent;color:var(--muted);cursor:pointer;padding:8px 12px;font-size:14px">−</button>
+              <span data-bars style="flex:1;text-align:center;font:600 14px 'IBM Plex Mono',monospace">8</span>
+              <button data-bars-up style="border:none;background:transparent;color:var(--muted);cursor:pointer;padding:8px 12px;font-size:14px">+</button>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button data-toggle="fill" style="flex:1;display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 11px;cursor:pointer;color:var(--fg);font:600 12px 'Space Grotesk'">Fill end <span data-sw style="width:30px;height:17px;border-radius:9px;background:var(--accent);position:relative;flex:none;transition:background .15s"><span style="position:absolute;top:2px;left:15px;width:13px;height:13px;border-radius:50%;background:#fff;transition:left .15s"></span></span></button>
+          <button data-toggle="crash" style="flex:1;display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 11px;cursor:pointer;color:var(--fg);font:600 12px 'Space Grotesk'">Crash in <span data-sw style="width:30px;height:17px;border-radius:9px;background:var(--panel2);position:relative;flex:none;transition:background .15s"><span style="position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;transition:left .15s"></span></span></button>
+        </div>
+        <div data-fill-pick style="display:none;margin-top:11px">
+          <div style="font:500 11px 'Space Grotesk';color:var(--muted);margin-bottom:6px">Fill pattern</div>
+          <div data-fillsel-wrap style="position:relative">
+            <button data-fillsel-btn style="width:100%;display:flex;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px 12px;color:var(--fg);cursor:pointer;font:600 13px 'Space Grotesk'"><span data-fillsel-label>Auto (profile picks)</span><span style="color:var(--muted);font-size:10px">▾</span></button>
+            <div data-fillsel-menu style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;max-height:220px;overflow-y:auto;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:5px;z-index:9;box-shadow:0 12px 30px rgba(0,0,0,.5)"></div>
+          </div>
+        </div>
+      </div>
+      <!-- axes -->
+      <div style="padding:16px">
+        <div style="display:flex;align-items:center;margin-bottom:14px"><span style="font-family:'Special Elite',monospace;font-size:13px;letter-spacing:.04em;color:var(--fg)">FEEL AXES</span><button data-reset-axes style="margin-left:auto;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;border-radius:6px;padding:5px 9px;font:600 10px 'Space Grotesk'">Reset to profile</button></div>
+
+      <div style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:var(--accent);margin-bottom:11px">FEEL</div>
+      <div data-slider data-axis="ghost" style="margin-bottom:13px"><div style="display:flex;justify-content:space-between;margin-bottom:6px;font:500 12px 'Space Grotesk'"><span>Ghost notes</span><span data-val style="font:500 11px 'IBM Plex Mono';color:var(--muted)">0.50</span></div><div data-track style="height:5px;border-radius:3px;background:var(--panel2);position:relative;cursor:pointer"><div data-fill style="position:absolute;inset:0;width:50%;background:var(--accent);border-radius:3px"></div><div data-knob style="position:absolute;top:50%;left:50%;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.5);transform:translate(-50%,-50%)"></div></div></div>
+      <div data-slider data-axis="ornament" style="margin-bottom:18px"><div style="display:flex;justify-content:space-between;margin-bottom:6px;font:500 12px 'Space Grotesk'"><span>Ornament</span><span data-val style="font:500 11px 'IBM Plex Mono';color:var(--muted)">0.40</span></div><div data-track style="height:5px;border-radius:3px;background:var(--panel2);position:relative;cursor:pointer"><div data-fill style="position:absolute;inset:0;width:40%;background:var(--accent);border-radius:3px"></div><div data-knob style="position:absolute;top:50%;left:40%;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.5);transform:translate(-50%,-50%)"></div></div></div>
+
+      <div style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:var(--accent);margin-bottom:11px">DENSITY</div>
+      <div data-slider data-axis="double_bass" style="margin-bottom:13px"><div style="display:flex;justify-content:space-between;margin-bottom:6px;font:500 12px 'Space Grotesk'"><span>Double bass</span><span data-val style="font:500 11px 'IBM Plex Mono';color:var(--muted)">0.70</span></div><div data-track style="height:5px;border-radius:3px;background:var(--panel2);position:relative;cursor:pointer"><div data-fill style="position:absolute;inset:0;width:70%;background:var(--accent);border-radius:3px"></div><div data-knob style="position:absolute;top:50%;left:70%;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.5);transform:translate(-50%,-50%)"></div></div></div>
+      <div data-slider data-axis="syncopation" style="margin-bottom:18px"><div style="display:flex;justify-content:space-between;margin-bottom:6px;font:500 12px 'Space Grotesk'"><span>Syncopation</span><span data-val style="font:500 11px 'IBM Plex Mono';color:var(--muted)">0.00</span></div><div data-track style="height:5px;border-radius:3px;background:var(--panel2);position:relative;cursor:pointer"><div data-fill style="position:absolute;inset:0;width:0%;background:var(--accent);border-radius:3px"></div><div data-knob style="position:absolute;top:50%;left:0%;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.5);transform:translate(-50%,-50%)"></div></div></div>
+
+      <div style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:var(--accent);margin-bottom:11px">FORM</div>
+      <div data-slider data-axis="breakdown" style="margin-bottom:13px"><div style="display:flex;justify-content:space-between;margin-bottom:6px;font:500 12px 'Space Grotesk'"><span>Breakdown chance</span><span data-val style="font:500 11px 'IBM Plex Mono';color:var(--muted)">0.60</span></div><div data-track style="height:5px;border-radius:3px;background:var(--panel2);position:relative;cursor:pointer"><div data-fill style="position:absolute;inset:0;width:60%;background:var(--accent);border-radius:3px"></div><div data-knob style="position:absolute;top:50%;left:60%;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.5);transform:translate(-50%,-50%)"></div></div></div>
+      <div data-slider data-axis="fill_prob" style="margin-bottom:18px"><div style="display:flex;justify-content:space-between;margin-bottom:6px;font:500 12px 'Space Grotesk'"><span>Fill frequency</span><span data-val style="font:500 11px 'IBM Plex Mono';color:var(--muted)">0.85</span></div><div data-track style="height:5px;border-radius:3px;background:var(--panel2);position:relative;cursor:pointer"><div data-fill style="position:absolute;inset:0;width:85%;background:var(--accent);border-radius:3px"></div><div data-knob style="position:absolute;top:50%;left:85%;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.5);transform:translate(-50%,-50%)"></div></div></div>
+
+      <div style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:var(--accent);margin-bottom:11px">LOOSENESS</div>
+      <div data-slider data-axis="humanize" style="margin-bottom:4px"><div style="display:flex;justify-content:space-between;margin-bottom:6px;font:500 12px 'Space Grotesk'"><span>Humanize</span><span data-val style="font:500 11px 'IBM Plex Mono';color:var(--muted)">0.85</span></div><div data-track style="height:5px;border-radius:3px;background:var(--panel2);position:relative;cursor:pointer"><div data-fill style="position:absolute;inset:0;width:85%;background:var(--accent);border-radius:3px"></div><div data-knob style="position:absolute;top:50%;left:85%;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.5);transform:translate(-50%,-50%)"></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== STATUS BAR ===== -->
+  <div style="position:absolute;bottom:0;left:0;right:0;height:50px;border-top:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:0 16px;z-index:2;background:rgba(0,0,0,.18)">
+    <span data-status-profile style="font:600 12px 'Space Grotesk';color:var(--fg)">new_found_glory</span>
+    <span style="width:4px;height:4px;border-radius:50%;background:var(--muted)"></span>
+    <span data-status-meta style="font:500 11px 'IBM Plex Mono',monospace;color:var(--muted)">178 BPM · 48 bars · 7 sections</span>
+    <div style="flex:1;text-align:center;font:400 11px 'Special Elite',monospace;color:var(--muted)">⚠ Preview is a GM stand-in — drag the .mid onto your EZD3 track for the real kit & mix</div>
+    <span data-outpath style="font:500 11px 'IBM Plex Mono',monospace;color:var(--muted)">~/Drums/pop_punk_drums.mid</span>
+  </div>
+
+  <!-- toast -->
+  <div data-toast style="position:absolute;left:50%;bottom:64px;transform:translate(-50%,16px);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;background:var(--ok);color:#06270f;font:600 13px 'Space Grotesk';padding:11px 20px;border-radius:10px;z-index:20;box-shadow:0 10px 30px rgba(0,0,0,.4);display:flex;align-items:center;gap:9px">✓ <span data-toast-text>Saved</span></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:800}}">
+class Component extends DCLogic {
+  componentDidMount() {
+    const root = this.root = document.querySelector('[data-app]');
+    const h8 = (v=82,a=95)=>{const o={};for(let i=0;i<16;i+=2)o[i]=i%4===0?a:v;return o;};
+    const h16=(v=70,a=92)=>{const o={};for(let i=0;i<16;i++)o[i]=i%4===0?a:v;return o;};
+    const h16b=(v=64,a=92,p=80)=>{const o={};for(let i=0;i<16;i++)o[i]=i%4===0?a:(i%4===2?p:v);return o;};
+    const q=(v=108)=>({0:v,4:v,8:v,12:v});
+
+    this.PAT = {
+      verse_basic:{hat:h8(),snare:{4:110,12:110},kick:{0:105,8:100,10:95}},
+      skank:{hat:h8(80,92),snare:{2:108,6:108,10:108,14:108},kick:{0:104,4:104,8:104,12:104}},
+      surf:{hat:h8(),snare:{4:108,6:92,12:108},kick:{0:105,8:102}},
+      verse_doubles:{hat:h8(),snare:{4:110,12:110},kick:{0:105,6:92,7:92,8:102,14:92,15:92}},
+      verse_16th:{hat:h16(),snare:{4:112,7:40,12:112,15:42},kick:{0:106,8:100,11:96}},
+      two_step:{hat:h8(82,94),snare:{4:110,12:110},kick:{0:106,8:106}},
+      ramones_buzzsaw:{hat:h8(86,96),snare:{4:112,12:112},kick:{0:104,4:100,8:104,12:100}},
+      four_floor:{hat:h8(),snare:{4:112,12:112},kick:{0:106,4:100,8:106,12:100}},
+      dbeat:{hat:h8(78,90),snare:{4:110,12:110},kick:{0:106,3:92,8:104,11:92}},
+      ska_punk:{hat:{0:70,2:96,4:70,6:96,8:70,10:96,12:70,14:96},snare:{4:100,12:100},kick:{0:104,8:102},open:[2,6,10,14]},
+      double_bass_verse:{hat:h8(82,94),snare:{4:112,12:112},kick:{0:106,2:88,3:88,6:92,7:92,8:104,10:88,11:88,14:92,15:92}},
+      disco_punk:{hat:{0:60,2:98,4:60,6:98,8:60,10:98,12:60,14:98},snare:{4:112,12:112},kick:{0:106,4:100,8:106,12:100},open:[2,6,10,14]},
+      tribal_toms:{tom:{0:108,4:100,8:108,12:100},snare:{12:110},hat:{6:84,14:84},kick:{0:104,3:90,8:102,11:90},open:[6,14]},
+      emo_syncopated:{hat:h8(),snare:{4:112,7:44,12:112},kick:{0:104,6:96,10:96,11:88}},
+      trap_hat_modern:{hat:h16b(),snare:{4:116,12:116,15:46},kick:{0:110,7:96,8:104}},
+      halftime:{hat:h8(78,90),snare:{8:116},kick:{0:108,4:90,12:96,14:96}},
+      breakdown_chug:{crash:q(108),snare:{8:118},kick:{0:110,2:96,3:96,8:104,10:96,11:96},china:true},
+      gang_break:{crash:{0:114,8:110},snare:{8:118},kick:{0:112,8:106}},
+      longview_tom:{tom:{0:104,4:96,8:104,12:96},hat:{6:80,14:84},kick:{0:102,8:100},open:[6,14]},
+      chorus_crash:{crash:q(108),snare:{4:114,12:114},kick:{0:108,2:92,8:104,10:92}},
+      chorus_open_hat:{hat:h8(96,106),snare:{4:114,12:114},kick:{0:108,8:104,10:95},open:[0,2,4,6,8,10,12,14]},
+      chorus_ride_bell:{hat:{0:100,2:80,4:92,6:80,8:100,10:80,12:92,14:80},snare:{4:114,12:114},kick:{0:108,8:104,10:95}},
+      chorus_doublebass:{crash:q(108),snare:{4:114,12:114},kick:{0:108,2:92,3:92,8:106,10:92,11:92}},
+      verse_ride:{hat:{0:96,2:78,4:92,6:78,8:96,10:78,12:92,14:78},snare:{4:108,12:108},kick:{0:104,8:100}},
+    };
+    this.DESC = {
+      verse_basic:'Standard backbeat, 8th hats',skank:'Double-time polka — snare on every up',surf:'Surf beat, extra snare on the & of 2',
+      verse_doubles:'Backbeat with 16th kick doubles',verse_16th:'Busy 16th hats + ghost notes',two_step:'Driving two-step kick',
+      ramones_buzzsaw:'Relentless 8ths, four-on-floor kick',four_floor:'Four-on-the-floor kick',dbeat:'Hardcore d-beat',
+      ska_punk:'Rim backbeat, open-hat offbeats',double_bass_verse:'16th double-kick verse',disco_punk:'Disco-punk offbeat open hats',
+      tribal_toms:'Tom-driven, floor-tom pulse',emo_syncopated:'Syncopated emo kick',trap_hat_modern:'Trap-bounce 16th hats, sub kick',
+      halftime:'Half-time — snare on 3',breakdown_chug:'China on quarters, chug kick',gang_break:'Open half-time for gang vocals',
+      longview_tom:'Melodic floor-tom groove',chorus_crash:'Crash on the quarters',chorus_open_hat:'Chorus riding open hats',
+      chorus_ride_bell:'Ride-bell chorus',chorus_doublebass:'Crash chorus + double kick',verse_ride:'Calm pre-chorus on the ride',
+    };
+    this.FILLS = {
+      tom_descend:{hat:{0:88,2:84,4:88,6:84},snare:{8:110,9:100},tom:{10:108,11:100,12:110,13:102,14:110,15:104}},
+      snare_buildup:{snare:{0:70,1:73,2:77,3:80,4:83,5:87,6:90,7:93,8:97,9:100,10:103,11:107,12:110,13:113,14:117,15:120},kick:{0:105,8:105}},
+      halfbar_toms:{hat:{0:90,2:84,4:90,6:84},snare:{4:110},kick:{0:105},tom:{8:106,10:104,11:104,12:108,13:106,14:110,15:108}},
+      triplet_snare:{hat:{0:88,4:88},kick:{0:104,8:104},snare:{10:104,11:104,12:110,13:104,14:104,15:108}},
+      ramones_crash:{hat:{0:95,2:82,4:95,6:82,8:95,10:82,12:95,14:82},snare:{4:110,12:114},kick:{0:104,8:104},crash:{12:112}},
+      marching_toms:{snare:{0:108,1:96,2:100,4:108,5:96,6:100},tom:{8:106,9:98,10:106,11:98,12:108,13:100,14:110,15:104}},
+      sparse_tom:{hat:{0:95,2:82,4:95,6:82,8:95,10:82,12:95,14:82},snare:{4:108},kick:{0:104,8:102},tom:{14:108,15:104}},
+      dbeat_roll:{kick:{0:106,4:104},snare:{8:96,9:104,10:96,11:104,12:96,13:104,14:96,15:104}},
+      double_bass:{kick:{0:100,1:100,2:100,3:100,4:100,5:100,6:100,7:100,8:100,9:100,10:100,11:100,12:100,13:100,14:100,15:100},tom:{8:106,10:106,12:108,14:110},crash:{0:112}},
+      blast:{kick:{0:100,2:100,4:100,6:100,8:100,10:100,12:100,14:100},snare:{1:100,3:100,5:100,7:100,9:100,11:100,13:100,15:100},crash:{0:112}},
+      china_choke:{kick:{0:108,8:108},snare:{4:110},crash:{12:116,14:110},china:true},
+      linear:{kick:{0:104,3:100,8:104,11:100},snare:{2:100,5:100,10:100,13:104},tom:{6:100,14:106,15:104}},
+      tom_around:{snare:{0:110,1:100},tom:{2:106,3:100,4:106,6:104,8:106,10:104,12:108,14:110,15:104}},
+    };
+    Object.assign(this.DESC,{
+      tom_descend:'Single-stroke roll down the toms — the workhorse',snare_buildup:'16th-snare crescendo, 70→120',
+      halfbar_toms:'Groove half-bar, tom flurry half-bar',triplet_snare:'Snare triplet into the downbeat',
+      ramones_crash:'Straight 8ths with a crash accent',marching_toms:'Drumline snare → tom cascade',
+      sparse_tom:'Minimal — one floor-tom pickup',dbeat_roll:'D-beat snare roll',
+      double_bass:'16th double-kick run + toms',blast:'Alternating blast into a crash',
+      china_choke:'China hit, choked',linear:'Linear kick/snare/tom — no overlaps',tom_around:'Full trip around the kit',
+    });
+    this.GROOVE_GROUPS=[['Core',['verse_basic','skank','surf','verse_doubles','verse_16th','two_step']],
+      ["'77 / power-pop",['ramones_buzzsaw','four_floor']],['Hardcore / skate',['dbeat','ska_punk']],
+      ['Double-bass',['double_bass_verse','chorus_doublebass']],['Emo / modern',['disco_punk','tribal_toms','emo_syncopated','trap_hat_modern','verse_ride']],
+      ['Breakdown / sparse',['halftime','breakdown_chug','gang_break','longview_tom']],['Choruses',['chorus_crash','chorus_open_hat','chorus_ride_bell']]];
+    this.FILL_LIST=['tom_descend','snare_buildup','halfbar_toms','triplet_snare','ramones_crash','marching_toms','sparse_tom','dbeat_roll','double_bass','blast','china_choke','linear','tom_around'];
+    this.PFILLS={pop_punk:['tom_descend','snare_buildup','triplet_snare','ramones_crash'],ramones:['ramones_crash','tom_descend'],tre_cool:['marching_toms','tom_descend','triplet_snare','sparse_tom'],offspring:['tom_descend','triplet_snare','ramones_crash'],mxpx:['ramones_crash','dbeat_roll','tom_descend'],skate_punk:['dbeat_roll','ramones_crash','blast'],barker:['triplet_snare','tom_descend','marching_toms','snare_buildup'],good_charlotte:['snare_buildup','tom_descend'],simple_plan:['snare_buildup','tom_descend'],new_found_glory:['double_bass','tom_descend','china_choke'],sum41:['double_bass','dbeat_roll','marching_toms','blast'],fall_out_boy:['tom_descend','double_bass','linear','snare_buildup'],all_time_low:['snare_buildup','tom_descend','triplet_snare'],paramore:['tom_around','tom_descend','linear','triplet_snare'],jimmy_eat_world:['tom_descend','snare_buildup'],easycore:['double_bass','blast','china_choke','tom_around'],neck_deep:['tom_descend','double_bass','snare_buildup'],revival_2020s:['tom_descend','linear','snare_buildup','tom_around'],pop_punk_pop:['snare_buildup','tom_descend','triplet_snare'],ska_punk:['tom_descend','ramones_crash']};
+    const P=(era,tempo,ax,roles)=>Object.assign({era,tempo,ghost:.5,ornament:.4,double_bass:0,syncopation:0,breakdown:0,fill_prob:.75,humanize:1},ax,{roles});
+    this.PROFILES = {
+      pop_punk:P('generic',172,{ghost:.7,ornament:.5,fill_prob:.8},{intro:'verse_basic',verse:'verse_basic',chorus:'chorus_crash',bridge:'halftime'}),
+      ramones:P('first_wave',175,{ghost:.1,ornament:.2,fill_prob:.5},{intro:'ramones_buzzsaw',verse:'ramones_buzzsaw',chorus:'chorus_crash',bridge:'halftime'}),
+      tre_cool:P('90s_skate',180,{ghost:.6,ornament:.6},{intro:'verse_basic',verse:'verse_basic',chorus:'chorus_ride_bell',bridge:'halftime'}),
+      offspring:P('90s_skate',172,{ghost:.4,ornament:.4},{intro:'surf',verse:'surf',chorus:'chorus_crash',bridge:'halftime'}),
+      mxpx:P('90s_skate',195,{ghost:.2,ornament:.2,humanize:.8},{intro:'ramones_buzzsaw',verse:'skank',chorus:'chorus_crash',bridge:'skank'}),
+      skate_punk:P('90s_skate',205,{ghost:.2,ornament:.2},{intro:'dbeat',verse:'skank',chorus:'chorus_crash',bridge:'dbeat'}),
+      barker:P('2000s_mall',168,{ghost:1,ornament:1,fill_prob:.95,humanize:.8},{intro:'verse_doubles',verse:'verse_16th',chorus:'chorus_crash',bridge:'halftime'}),
+      good_charlotte:P('2000s_mall',158,{ghost:.4,ornament:.4},{intro:'verse_basic',verse:'verse_basic',chorus:'chorus_crash',bridge:'halftime'}),
+      simple_plan:P('2000s_mall',162,{ghost:.3,ornament:.3,humanize:.7},{intro:'verse_basic',verse:'verse_basic',chorus:'chorus_crash',bridge:'halftime'}),
+      new_found_glory:P('2000s_mall',178,{ghost:.5,ornament:.4,double_bass:.7,breakdown:.6,humanize:.85},{intro:'verse_doubles',verse:'double_bass_verse',chorus:'chorus_doublebass',bridge:'breakdown_chug'}),
+      sum41:P('2000s_mall',188,{ghost:.3,ornament:.4,double_bass:.6,breakdown:.5,humanize:.85},{intro:'dbeat',verse:'skank',chorus:'chorus_doublebass',bridge:'breakdown_chug'}),
+      fall_out_boy:P('2000s_mall',168,{ghost:.6,ornament:.5,double_bass:.4,syncopation:.5,humanize:.85},{intro:'disco_punk',verse:'disco_punk',chorus:'chorus_crash',bridge:'emo_syncopated'}),
+      all_time_low:P('2000s_mall',165,{ghost:.4,ornament:.4,humanize:.8},{intro:'four_floor',verse:'four_floor',chorus:'chorus_crash',bridge:'halftime'}),
+      paramore:P('emo_crossover',164,{ghost:.7,ornament:.6,syncopation:.5,double_bass:.3,humanize:.9},{intro:'tribal_toms',verse:'tribal_toms',chorus:'chorus_crash',bridge:'halftime'}),
+      jimmy_eat_world:P('emo_crossover',150,{ghost:.6,ornament:.4,syncopation:.3},{intro:'verse_basic',verse:'verse_basic',chorus:'chorus_crash',bridge:'halftime'}),
+      easycore:P('easycore_2010s',182,{ghost:.4,ornament:.4,double_bass:.85,breakdown:.9,humanize:.85},{intro:'double_bass_verse',verse:'double_bass_verse',chorus:'chorus_doublebass',bridge:'breakdown_chug'}),
+      neck_deep:P('easycore_2010s',170,{ghost:.6,ornament:.5,double_bass:.35,breakdown:.4,humanize:.9},{intro:'four_floor',verse:'verse_basic',chorus:'chorus_crash',bridge:'breakdown_chug'}),
+      revival_2020s:P('revival_2020s',160,{ghost:.8,ornament:.6,syncopation:.4,double_bass:.3,humanize:.6},{intro:'trap_hat_modern',verse:'trap_hat_modern',chorus:'chorus_crash',bridge:'halftime'}),
+      pop_punk_pop:P('revival_2020s',158,{ghost:.6,ornament:.5,humanize:.7},{intro:'four_floor',verse:'four_floor',chorus:'chorus_crash',bridge:'halftime'}),
+      ska_punk:P('ska_punk',165,{ghost:.4,ornament:.6,fill_prob:.6},{intro:'ska_punk',verse:'ska_punk',chorus:'chorus_crash',bridge:'ska_punk'}),
+    };
+    this.ERAS = [['generic','Generic'],['first_wave',"First wave · '77"],['90s_skate',"'90s skate"],['2000s_mall','2000s mall'],['emo_crossover','Emo crossover'],['easycore_2010s','Easycore · 2010s'],['revival_2020s','Revival · 2020s'],['ska_punk','Ska-punk']];
+    this.LANES = [['crash','CR'],['hat','HAT'],['snare','SN'],['tom','TOM'],['kick','KK']];
+    this.DBL = [2,3,6,7,10,11,14,15];
+    this.ROLE_E = {intro:.45,verse:.6,chorus:1,bridge:.35};
+    this.ARR_TPL = [['intro',4,0,0],['verse',8,1,0],['chorus',8,1,1],['verse',8,1,0],['chorus',8,1,1],['bridge',4,1,0],['chorus',8,0,1]];
+
+    this.mode='generate'; this.railTab='profiles'; this.playing=true; this.dark=true;
+    this.loop=true; this.step=0; this.sel=0; this.align='grid'; this.search='';
+    this.bpmFromSong=false; this.preview=null;
+    this.profile='new_found_glory';
+    this.selectProfile('new_found_glory', false);
+
+    this._wire();
+    this.renderRail();
+    this.renderAll();
+    this.timer=setInterval(()=>this._tick(),this._stepMs());
+  }
+  componentWillUnmount(){ clearInterval(this.timer); }
+
+  _stepMs(){ return 60000/this.bpm/4; }
+
+  selectProfile(key, render=true){
+    this.profile=key;
+    const p=this.PROFILES[key];
+    if(!this.bpmFromSong) this.bpm=p.tempo;
+    this.axes={ghost:p.ghost,ornament:p.ornament,double_bass:p.double_bass,syncopation:p.syncopation,breakdown:p.breakdown,fill_prob:p.fill_prob,humanize:p.humanize};
+    this.arr=this.ARR_TPL.map(([role,bars,fill,crash])=>({role,bars,fill:!!fill,crash:!!crash,groove:p.roles[role]||p.roles.verse}));
+    this.sel=0;
+    if(render){ this.renderRail(); this.renderAll(); }
+    else { this.q('[data-bpm]').textContent=this.bpm; }
+  }
+
+  q(s){ return this.root.querySelector(s); }
+  qa(s){ return [...this.root.querySelectorAll(s)]; }
+
+  renderAll(){
+    this.q('[data-bpm]').textContent=this.bpm;
+    this.renderArrangement();
+    this.updateCenter();
+    this.renderSectionProps();
+    this.setAllAxisUI();
+    this.updateStatus();
+    this.updateBpmSuggest();
+  }
+
+  // ---------- LEFT RAIL ----------
+  renderRail(){
+    const body=this.q('[data-rail-body]'); body.innerHTML='';
+    const s=this.search.toLowerCase();
+    if(this.railTab==='profiles'){
+      this.ERAS.forEach(([era,label])=>{
+        const names=Object.keys(this.PROFILES).filter(n=>this.PROFILES[n].era===era && (!s||n.includes(s)||label.toLowerCase().includes(s)));
+        if(!names.length) return;
+        const hd=document.createElement('div');
+        hd.style.cssText="font-family:'Special Elite',monospace;font-size:10px;letter-spacing:.06em;color:var(--muted);padding:12px 8px 6px";
+        hd.textContent=label.toUpperCase(); body.appendChild(hd);
+        names.forEach(n=>{
+          const p=this.PROFILES[n], on=n===this.profile;
+          const it=document.createElement('button');
+          it.style.cssText=`width:100%;text-align:left;border:1px solid ${on?'var(--accent)':'transparent'};background:${on?'rgba(126,108,214,.14)':'transparent'};color:var(--fg);cursor:pointer;border-radius:8px;padding:9px 10px;margin-bottom:3px;display:flex;align-items:center;gap:9px`;
+          const fp=this._fingerprint(p);
+          it.innerHTML=`<div style="flex:1;min-width:0"><div style="font:600 12.5px 'Space Grotesk';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${n}</div><div style="font:500 10px 'IBM Plex Mono';color:var(--muted);margin-top:1px">~${p.tempo} BPM</div></div>${fp}`;
+          it.onclick=()=>{ this.selectProfile(n); };
+          body.appendChild(it);
+        });
+      });
+    } else {
+      const mk=(name,kind)=>{
+        const it=document.createElement('button'); const on=this.preview&&this.preview.key===name&&this.preview.kind===kind;
+        it.style.cssText=`width:100%;text-align:left;border:1px solid ${on?'var(--accent)':'transparent'};background:${on?'rgba(126,108,214,.14)':'var(--panel)'};color:var(--fg);cursor:pointer;border-radius:8px;padding:8px 11px;margin-bottom:5px`;
+        it.innerHTML=`<div style="display:flex;align-items:center;gap:8px"><span style="font:600 12px 'Space Grotesk'">${name}</span><span style="margin-left:auto;color:var(--accent);font-size:11px">▶</span></div><div style="font:500 10px 'Space Grotesk';color:var(--muted);margin-top:3px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${this.DESC[name]||''}</div>`;
+        it.onclick=()=>{ this.preview={key:name,kind}; this.renderRail(); this.renderBrowser(); };
+        return it;
+      };
+      const hdr=t=>{const h=document.createElement('div');h.style.cssText="font-family:'Special Elite',monospace;font-size:10px;letter-spacing:.06em;color:var(--muted);padding:12px 8px 6px";h.textContent=t.toUpperCase();return h;};
+      this.GROOVE_GROUPS.forEach(([label,names])=>{ const ns=names.filter(n=>!s||n.includes(s)); if(!ns.length)return; body.appendChild(hdr(label)); ns.forEach(n=>body.appendChild(mk(n,'groove'))); });
+      const fills=this.FILL_LIST.filter(n=>!s||n.includes(s)); if(fills.length){ body.appendChild(hdr('Fills')); fills.forEach(n=>body.appendChild(mk(n,'fill'))); }
+    }
+  }
+  _fingerprint(p){
+    const bars=[['db',p.double_bass],['brk',p.breakdown],['gh',p.ghost]];
+    return '<div style="display:flex;gap:3px;align-items:flex-end;height:20px">'+bars.map(([,v])=>`<div style="width:4px;height:${Math.max(3,v*20)|0}px;background:var(--accent);opacity:${.4+v*.6};border-radius:1px"></div>`).join('')+'</div>';
+  }
+
+  // ---------- ARRANGEMENT ----------
+  renderArrangement(){
+    const wrap=this.q('[data-arrangement]'); wrap.innerHTML='';
+    this.arr.forEach((sec,i)=>{
+      const on=i===this.sel, e=this.ROLE_E[sec.role]||.5;
+      const chip=document.createElement('div');
+      chip.style.cssText=`flex:none;width:${56+sec.bars*4}px;border:1px solid ${on?'var(--accent)':'var(--line)'};background:${on?'rgba(126,108,214,.12)':'var(--panel)'};border-radius:9px;padding:8px 10px;cursor:pointer;position:relative`;
+      const marks=(sec.crash?'<span title="crash in" style="color:var(--gold);font-size:10px">✦</span>':'')+(sec.fill?'<span title="fill: '+(sec.fillName||'auto')+'" style="color:var(--accent);font-size:11px">▸</span>':'');
+      chip.innerHTML=`<div style="display:flex;align-items:flex-end;gap:3px;height:26px;margin-bottom:7px">${[...Array(6)].map((_,k)=>`<div style="flex:1;height:${(e*(0.55+0.45*Math.sin(k+i)*0+ (k===2||k===3?1:0.7)))*26|0}px;min-height:3px;background:var(--accent);opacity:${on?.9:.4};border-radius:1px"></div>`).join('')}</div>
+        <div style="display:flex;align-items:center;gap:4px"><span style="font:600 11px 'Space Grotesk';color:${on?'var(--fg)':'var(--muted)'};text-transform:capitalize">${sec.role}</span><span style="margin-left:auto;display:flex;gap:3px">${marks}</span></div>
+        <div style="font:500 9px 'IBM Plex Mono';color:var(--muted);margin-top:2px">${sec.bars} bars</div>`;
+      chip.onclick=()=>{ this.sel=i; this.renderArrangement(); this.renderGrid(); this.renderSectionProps(); };
+      wrap.appendChild(chip);
+    });
+  }
+
+  // ---------- GRID ----------
+  _applyAxes(groove){
+    const base=this.PAT[groove]||this.PAT.verse_basic;
+    const g={}; ['crash','hat','snare','tom','kick'].forEach(k=>g[k]=Object.assign({},base[k]||{}));
+    const open=new Set(base.open||[]);
+    // double bass
+    const n=Math.round(this.axes.double_bass*this.DBL.length*0.8);
+    for(let i=0;i<n;i++){ const s=this.DBL[i]; if(!g.kick[s]) g.kick[s]=86; }
+    // ghost scale
+    for(const s in g.snare){ if(g.snare[s]<=50){ if(this.axes.ghost<=0.02) delete g.snare[s]; else g.snare[s]=Math.max(8,Math.round(40*this.axes.ghost)); } }
+    // ornament -> open hats
+    if(this.axes.ornament>0.4){ [6,14].forEach(s=>{ if(g.hat[s]) open.add(s); }); }
+    // crash in
+    if(this.arr[this.sel].crash){ g.crash[0]=Math.max(g.crash[0]||0,112); if(g.hat[0]) delete g.hat[0]; }
+    return {g,open,china:!!base.china};
+  }
+  _buildGrid(grid,ruler,g,open,china){
+    ruler.innerHTML='';
+    for(let s=0;s<16;s++){ const d=document.createElement('div'); d.style.cssText=`flex:1;text-align:center;font:500 9px 'IBM Plex Mono';color:${s%4===0?'var(--muted)':'transparent'}`; d.textContent=s%4===0?(s/4+1):'·'; ruler.appendChild(d); }
+    grid.innerHTML=''; const cols=[];
+    for(let s=0;s<16;s++){
+      const col=document.createElement('div');
+      col.style.cssText='flex:1;display:flex;flex-direction:column;gap:7px;border-radius:5px;padding:2px;transition:background .07s';
+      const cells=[];
+      this.LANES.forEach(([lane])=>{
+        const v=g[lane]&&g[lane][s]||0, hit=v>0, isOpen=lane==='hat'&&open.has(s)&&hit;
+        const cell=document.createElement('div'); cell.dataset.hit=hit?'1':'0';
+        let bg,extra='';
+        if(hit){ const inten=0.4+(Math.min(v,118)-38)/80*0.6;
+          if(isOpen){ bg='transparent'; extra=`box-shadow:inset 0 0 0 2px rgba(126,108,214,${(inten).toFixed(2)})`; }
+          else { bg=`rgba(126,108,214,${inten.toFixed(2)})`; if(china&&lane==='crash') extra='box-shadow:inset 0 0 0 1px rgba(216,179,74,.7)'; }
+        } else { bg=(s%4===0)?'rgba(255,255,255,.07)':'rgba(255,255,255,.035)'; extra='box-shadow:inset 0 0 0 1px var(--line)'; }
+        cell.style.cssText=`height:32px;border-radius:4px;background:${bg};${extra};transition:transform .08s,box-shadow .08s,filter .08s`;
+        col.appendChild(cell); cells.push(cell);
+      });
+      grid.appendChild(col); cols.push({col,cells});
+    }
+    return cols;
+  }
+  renderGrid(){
+    const sec=this.arr[this.sel], {g,open,china}=this._applyAxes(sec.groove);
+    this.cols=this._buildGrid(this.q('[data-grid]'),this.q('[data-ruler]'),g,open,china);
+  }
+  _normPat(src){ const g={}; ['crash','hat','snare','tom','kick'].forEach(k=>g[k]=Object.assign({},src[k]||{})); return g; }
+  renderBrowser(){
+    if(!this.preview){ const f=this.GROOVE_GROUPS[0][1][0]; this.preview={key:f,kind:'groove'}; }
+    const {key,kind}=this.preview;
+    const src=(kind==='fill'?this.FILLS:this.PAT)[key]; if(!src) return;
+    const g=this._normPat(src), open=new Set(src.open||[]), china=!!src.china;
+    this.cols=this._buildGrid(this.q('[data-browser-grid]'),this.q('[data-browser-ruler]'),g,open,china);
+    this.q('[data-browser-name]').textContent=key;
+    this.q('[data-browser-desc]').textContent=this.DESC[key]||'';
+    this.q('[data-browser-kind]').textContent=kind.toUpperCase();
+    this.q('[data-browser-use-label]').textContent=kind==='fill'?'Add as fill to current section':'Use in current section';
+    this.q('[data-bico="play"]').textContent=this.playing?'❚❚':'▶';
+    const ub=this.q('[data-browser-usedby]'); ub.innerHTML='';
+    const users=Object.keys(this.PROFILES).filter(n=>kind==='fill'?(this.PFILLS[n]||[]).includes(key):Object.values(this.PROFILES[n].roles).includes(key));
+    if(!users.length){ const e=document.createElement('span'); e.style.cssText="font:500 12px 'Space Grotesk';color:var(--muted)"; e.textContent='In the library — not a profile default'; ub.appendChild(e); }
+    users.forEach(n=>{ const c=document.createElement('button'); c.style.cssText="border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer;border-radius:999px;padding:6px 13px;font:600 12px 'Space Grotesk'"; c.textContent=n; c.onclick=()=>{ this.railTab='profiles'; this.qa('[data-rail-tab]').forEach(x=>{const on=x.getAttribute('data-rail-tab')==='profiles';x.style.background=on?'var(--panel2)':'transparent';x.style.color=on?'var(--fg)':'var(--muted)';}); this.selectProfile(n); }; ub.appendChild(c); });
+  }
+
+  // ---------- SECTION PROPS ----------
+  renderSectionProps(){
+    const sec=this.arr[this.sel];
+    this.q('[data-groove-label]').textContent=sec.groove;
+    this.q('[data-bars]').textContent=sec.bars;
+    this.q('[data-section-role]').textContent=sec.role.toUpperCase();
+    this.q('[data-section-groove]').textContent=sec.groove;
+    this.q('[data-section-meta]').textContent='· '+sec.bars+' bars'+(sec.fill?(' · fill: '+(sec.fillName||'auto')):'');
+    this._setToggle('fill',sec.fill); this._setToggle('crash',sec.crash);
+    const fpk=this.q('[data-fill-pick]'); if(fpk){ fpk.style.display=sec.fill?'block':'none'; this.q('[data-fillsel-label]').textContent=sec.fillName||'Auto (profile picks)'; }
+  }
+  _setToggle(name,on){
+    const btn=this.q(`[data-toggle="${name}"]`), sw=btn.querySelector('[data-sw]'), dot=sw.firstElementChild;
+    sw.style.background=on?'var(--accent)':'var(--panel2)'; dot.style.left=on?'15px':'2px';
+  }
+
+  // ---------- AXES UI ----------
+  setAxisUI(axis,val){
+    const sl=this.q(`[data-slider][data-axis="${axis}"]`); if(!sl) return;
+    sl.querySelector('[data-fill]').style.width=(val*100)+'%';
+    sl.querySelector('[data-knob]').style.left=(val*100)+'%';
+    sl.querySelector('[data-val]').textContent=val.toFixed(2);
+  }
+  setAllAxisUI(){ for(const k in this.axes) this.setAxisUI(k,this.axes[k]); }
+
+  updateStatus(){
+    const bars=this.arr.reduce((a,s)=>a+s.bars,0);
+    this.q('[data-total-bars]').textContent=bars+' bars';
+    this.q('[data-status-profile]').textContent=this.profile;
+    this.q('[data-status-meta]').textContent=`${this.bpm} BPM · ${bars} bars · ${this.arr.length} sections`;
+  }
+  updateBpmSuggest(){
+    const pill=this.q('[data-bpm-suggest]'); if(!pill) return;
+    const sug=this.PROFILES[this.profile].tempo;
+    if(this.bpmFromSong && sug!==this.bpm){ pill.style.display='flex'; pill.innerHTML=`<span style="color:var(--accent)">↺</span> ${this.profile} ~${sug}`; pill.onclick=()=>{ this.bpm=sug; this.q('[data-bpm]').textContent=sug; this.updateStatus(); this._restartTimer(); this.updateBpmSuggest(); }; }
+    else { pill.style.display='none'; }
+  }
+
+  // ---------- PLAYHEAD ----------
+  _tick(){
+    if(!this.playing||!this.cols) return;
+    this.step=(this.step+1)%16;
+    this.cols.forEach((c,i)=>{
+      const active=i===this.step;
+      c.col.style.background=active?'rgba(126,108,214,.14)':'transparent';
+      c.cells.forEach(cell=>{ if(cell.dataset.hit==='1'){ cell.style.transform=active?'scale(1.16)':'scale(1)'; cell.style.boxShadow=active?'0 0 11px rgba(126,108,214,.75)':''; cell.style.filter=active?'brightness(1.25)':'none'; }});
+    });
+    const w=((this.step+1)/16*100)+'%';
+    const pe=this.q('[data-progress]'); if(pe) pe.style.width=w;
+    const be=this.q('[data-browser-progress]'); if(be) be.style.width=w;
+  }
+  _restartTimer(){ clearInterval(this.timer); this.timer=setInterval(()=>this._tick(),this._stepMs()); }
+
+  // ---------- WIRING ----------
+  _wire(){
+    // mode tabs
+    this.qa('[data-mode-tab]').forEach(b=>b.onclick=()=>this.setMode(b.getAttribute('data-mode-tab')));
+    // rail tabs
+    this.qa('[data-rail-tab]').forEach(b=>b.onclick=()=>{ this.railTab=b.getAttribute('data-rail-tab');
+      this.qa('[data-rail-tab]').forEach(x=>{const on=x===b; x.style.background=on?'var(--panel2)':'transparent'; x.style.color=on?'var(--fg)':'var(--muted)';});
+      this.renderRail(); this.updateCenter(); });
+    // search
+    this.q('[data-search]').oninput=e=>{ this.search=e.target.value; this.renderRail(); };
+    // bpm
+    this.q('[data-bpm-up]').onclick=()=>this._bpm(1); this.q('[data-bpm-dn]').onclick=()=>this._bpm(-1);
+    // theme
+    this.q('[data-theme]').onclick=()=>this.toggleTheme();
+    // export
+    this.q('[data-export]').onclick=()=>this.toast('Saved pop_punk_drums.mid');
+    // regen
+    this.q('[data-regen]').onclick=()=>{ const ico=this.q('[data-regen-ico]'); ico.style.transition='transform .5s'; ico.style.transform='rotate(360deg)'; setTimeout(()=>{ico.style.transition='none';ico.style.transform='rotate(0)';},520); const seed=this.q('[data-seed]'); seed.textContent=(+seed.textContent%9)+1; this.renderGrid(); };
+    // transport
+    this.q('[data-play]').onclick=()=>this.setPlaying(!this.playing);
+    this.q('[data-stop]').onclick=()=>{ this.setPlaying(false); this.step=0; this._tick2reset(); };
+    this.q('[data-loop]').onclick=()=>{ this.loop=!this.loop; const b=this.q('[data-loop]'); b.style.background=this.loop?'rgba(126,108,214,.14)':'var(--panel2)'; b.style.color=this.loop?'var(--accent)':'var(--muted)'; b.style.borderColor=this.loop?'var(--accent)':'var(--line)'; };
+    // add section
+    this.q('[data-add-section]').onclick=()=>{ this.arr.push({role:'chorus',bars:8,fill:false,crash:true,groove:this.PROFILES[this.profile].roles.chorus}); this.sel=this.arr.length-1; this.renderArrangement(); this.renderGrid(); this.renderSectionProps(); this.updateStatus(); };
+    // section bars
+    this.q('[data-bars-up]').onclick=()=>this._bars(1); this.q('[data-bars-dn]').onclick=()=>this._bars(-1);
+    // toggles
+    this.qa('[data-toggle]').forEach(b=>b.onclick=()=>{ const k=b.getAttribute('data-toggle'); this.arr[this.sel][k]=!this.arr[this.sel][k]; this.renderSectionProps(); this.renderArrangement(); if(k==='crash') this.renderGrid(); });
+    // reset axes
+    this.q('[data-reset-axes]').onclick=()=>{ const p=this.PROFILES[this.profile]; this.axes={ghost:p.ghost,ornament:p.ornament,double_bass:p.double_bass,syncopation:p.syncopation,breakdown:p.breakdown,fill_prob:p.fill_prob,humanize:p.humanize}; this.setAllAxisUI(); this.renderGrid(); };
+    // groove dropdown
+    const gb=this.q('[data-groove-btn]'), gm=this.q('[data-groove-menu]');
+    gb.onclick=()=>{ if(gm.style.display==='block'){gm.style.display='none';return;} gm.innerHTML=''; Object.keys(this.PAT).forEach(n=>{ const it=document.createElement('div'); it.style.cssText=`padding:8px 10px;border-radius:6px;cursor:pointer;font:600 12px 'Space Grotesk';color:${n===this.arr[this.sel].groove?'var(--accent)':'var(--fg)'}`; it.textContent=n; it.onmouseenter=()=>it.style.background='rgba(255,255,255,.06)'; it.onmouseleave=()=>it.style.background='transparent'; it.onclick=()=>{ this.arr[this.sel].groove=n; gm.style.display='none'; this.renderSectionProps(); this.renderArrangement(); this.renderGrid(); this.updateStatus(); }; gm.appendChild(it); }); gm.style.display='block'; };
+    document.addEventListener('pointerdown',e=>{ if(!this.q('[data-groove-wrap]').contains(e.target)) gm.style.display='none'; });
+    // fill picker
+    const fsb=this.q('[data-fillsel-btn]'), fsm=this.q('[data-fillsel-menu]');
+    fsb.onclick=()=>{ if(fsm.style.display==='block'){fsm.style.display='none';return;} fsm.innerHTML=''; ['__auto'].concat(this.FILL_LIST).forEach(n=>{ const label=n==='__auto'?'Auto (profile picks)':n; const cur=(this.arr[this.sel].fillName||'__auto')===n; const it=document.createElement('div'); it.style.cssText=`padding:8px 10px;border-radius:6px;cursor:pointer;font:600 12px 'Space Grotesk';color:${cur?'var(--accent)':'var(--fg)'}`; it.innerHTML=n==='__auto'?label:`${label} <span style="color:var(--muted);font-weight:400">— ${this.DESC[n]||''}</span>`; it.onmouseenter=()=>it.style.background='rgba(255,255,255,.06)'; it.onmouseleave=()=>it.style.background='transparent'; it.onclick=()=>{ this.arr[this.sel].fillName=n==='__auto'?null:n; if(n!=='__auto') this.arr[this.sel].fill=true; fsm.style.display='none'; this.renderSectionProps(); this.renderArrangement(); }; fsm.appendChild(it); }); fsm.style.display='block'; };
+    document.addEventListener('pointerdown',e=>{ if(!this.q('[data-fillsel-wrap]').contains(e.target)) fsm.style.display='none'; });
+    // sliders
+    this._wireSliders();
+    // browser
+    this.q('[data-browser-play]').onclick=()=>{ this.setPlaying(!this.playing); this.q('[data-bico="play"]').textContent=this.playing?'❚❚':'▶'; };
+    this.q('[data-browser-use]').onclick=()=>{ if(!this.preview) return; const {key,kind}=this.preview; if(kind==='fill'){ this.arr[this.sel].fill=true; this.arr[this.sel].fillName=key; this.renderSectionProps(); this.renderArrangement(); this.toast('Added '+key+' fill to '+this.arr[this.sel].role); } else { this.arr[this.sel].groove=key; this.renderArrangement(); this.updateStatus(); this.toast(key+' → '+this.arr[this.sel].role); } };
+    // drop flow
+    this._wireDrop();
+  }
+
+  setMode(m){
+    this.mode=m;
+    this.qa('[data-mode-tab]').forEach(b=>{ const on=b.getAttribute('data-mode-tab')===m;
+      b.style.borderColor=on?'var(--accent)':'var(--line)'; b.style.background=on?'rgba(126,108,214,.16)':'transparent'; b.style.color=on?'var(--fg)':'var(--muted)'; });
+    this.updateCenter();
+  }
+  updateCenter(){
+    const gen=this.mode==='generate'&&this.railTab==='profiles';
+    const br=this.mode==='generate'&&this.railTab==='grooves';
+    const dr=this.mode==='drop';
+    this.q('[data-view="generate"]').style.display=gen?'flex':'none';
+    this.q('[data-view="browser"]').style.display=br?'flex':'none';
+    this.q('[data-view="drop"]').style.display=dr?'flex':'none';
+    if(gen) this.renderGrid(); else if(br) this.renderBrowser();
+  }
+  _bpm(d){ this.bpm=Math.max(80,Math.min(260,this.bpm+d)); this.bpmFromSong=true; this.q('[data-bpm]').textContent=this.bpm; this.updateStatus(); this.updateBpmSuggest(); this._restartTimer(); }
+  _bars(d){ const s=this.arr[this.sel]; s.bars=Math.max(1,Math.min(16,s.bars+d)); this.renderSectionProps(); this.renderArrangement(); this.updateStatus(); }
+  setPlaying(p){ this.playing=p; this.q('[data-ico="play"]').style.display=p?'none':'inline'; this.q('[data-ico="pause"]').style.display=p?'inline':'none'; if(!p) this._tick2reset(false); }
+  _tick2reset(zero=true){ if(zero) this.step=0; if(this.cols) this.cols.forEach((c,i)=>{ c.col.style.background='transparent'; c.cells.forEach(cell=>{cell.style.transform='scale(1)';cell.style.boxShadow=cell.dataset.hit==='1'?'none':cell.style.boxShadow;cell.style.filter='none';}); }); if(zero) this.q('[data-progress]').style.width='0%'; }
+  toggleTheme(){
+    this.dark=!this.dark;
+    const dk={'--bg':'#0e0e10','--panel':'#161619','--panel2':'#1e1e23','--fg':'#ECEAE6','--muted':'#928e86','--line':'rgba(255,255,255,.09)'};
+    const lt={'--bg':'#E7E4DC','--panel':'#F4F2EC','--panel2':'#FBFAF6','--fg':'#1A1814','--muted':'#6e6a61','--line':'rgba(0,0,0,.11)'};
+    const set=this.dark?dk:lt; for(const k in set) this.root.style.setProperty(k,set[k]);
+    this.root.style.background=this.dark
+      ?'radial-gradient(circle at 18% 8%,rgba(255,255,255,.045),transparent 42%),radial-gradient(circle at 88% 96%,rgba(0,0,0,.6),transparent 52%),linear-gradient(150deg,#17171b,#0b0b0d)'
+      :'radial-gradient(circle at 18% 8%,rgba(255,255,255,.5),transparent 42%),radial-gradient(circle at 88% 96%,rgba(0,0,0,.06),transparent 52%),linear-gradient(150deg,#eceae3,#dad6cc)';
+    this.q('[data-grain]').style.opacity=this.dark?'.13':'.06';
+    this.q('[data-theme]').innerHTML=this.dark?'○ Light':'● Dark';
+  }
+  toast(msg){ const t=this.q('[data-toast]'); this.q('[data-toast-text]').textContent=msg; t.style.opacity='1'; t.style.transform='translate(-50%,0)'; clearTimeout(this._tt); this._tt=setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translate(-50%,16px)'; },2200); }
+
+  _wireSliders(){
+    let active=null;
+    const apply=(sl,e)=>{ const t=sl.querySelector('[data-track]').getBoundingClientRect(); let r=(e.clientX-t.left)/t.width; r=Math.max(0,Math.min(1,r)); const axis=sl.getAttribute('data-axis'); this.axes[axis]=r; this.setAxisUI(axis,r); if(axis==='ghost'||axis==='ornament'||axis==='double_bass') this.renderGrid(); };
+    this.qa('[data-slider]').forEach(sl=>{ sl.querySelector('[data-track]').addEventListener('pointerdown',e=>{active=sl;apply(sl,e);e.preventDefault();}); });
+    window.addEventListener('pointermove',e=>{ if(active) apply(active,e); });
+    window.addEventListener('pointerup',()=>active=null);
+  }
+
+  _wireDrop(){
+    const dz=this.q('[data-dropzone]');
+    const stage=s=>this.qa('[data-drop-stage]').forEach(el=>el.style.display=el.getAttribute('data-drop-stage')===s?(s==='zone'?'flex':'flex'):'none');
+    dz.onclick=()=>this._analyze('my_demo.wav');
+    dz.addEventListener('dragover',e=>{e.preventDefault();dz.style.borderColor='var(--accent)';dz.style.background='rgba(126,108,214,.06)';});
+    dz.addEventListener('dragleave',()=>{dz.style.borderColor='var(--line)';dz.style.background='rgba(255,255,255,.015)';});
+    dz.addEventListener('drop',e=>{e.preventDefault();const f=e.dataTransfer.files[0];this._analyze(f?f.name:'dropped_track.wav');});
+    this.q('[data-drop-reset]').onclick=()=>stage('zone');
+    this.qa('[data-align]').forEach(b=>b.onclick=()=>{ this.align=b.getAttribute('data-align'); this.qa('[data-align]').forEach(x=>{const on=x===b; x.style.borderColor=on?'var(--accent)':'var(--line)'; x.style.background=on?'rgba(126,108,214,.16)':'transparent'; x.style.color=on?'var(--fg)':'var(--muted)';}); });
+    this.q('[data-drop-bpm-up]').onclick=()=>{const el=this.q('[data-drop-bpm]');el.textContent=Math.min(260,+el.textContent+1);};
+    this.q('[data-drop-bpm-dn]').onclick=()=>{const el=this.q('[data-drop-bpm]');el.textContent=Math.max(80,+el.textContent-1);};
+    this.q('[data-drop-build]').onclick=()=>this._buildFromDrop();
+    this._dropStage=stage;
+  }
+  _analyze(name){
+    this.dropFile=name; this.q('[data-drop-file]').textContent=name;
+    this.dropSegs=[{role:'intro',bars:4},{role:'verse',bars:8},{role:'chorus',bars:8},{role:'verse',bars:8},{role:'chorus',bars:8},{role:'bridge',bars:4},{role:'chorus',bars:8}];
+    this._dropStage('analyzing');
+    const steps=['Detecting tempo…','Tracking beats & downbeats…','Segmenting structure…','Reading energy curve…'];
+    const bar=this.q('[data-analyze-bar]'), lab=this.q('[data-analyze-step]'); let i=0; bar.style.width='0%';
+    clearInterval(this._ai);
+    this._ai=setInterval(()=>{ i++; lab.textContent=steps[Math.min(i,steps.length-1)]; bar.style.width=Math.min(100,i*25)+'%';
+      if(i>=4){ clearInterval(this._ai); setTimeout(()=>{ this.q('[data-drop-bpm]').textContent=174; this.renderDropSections(); this._dropStage('detected'); },350); } },330);
+  }
+  renderDropSections(){
+    const wrap=this.q('[data-drop-sections]'); wrap.innerHTML='';
+    const roles=['intro','verse','chorus','bridge'];
+    (this.dropSegs||[]).forEach(seg=>{
+      const e=this.ROLE_E[seg.role]||.5;
+      const d=document.createElement('div');
+      d.style.cssText=`flex:none;width:${64+seg.bars*5}px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:10px;display:flex;flex-direction:column;gap:8px`;
+      const bars=document.createElement('div'); bars.style.cssText='display:flex;align-items:flex-end;gap:2px;height:46px';
+      bars.innerHTML=[...Array(8)].map((_,k)=>`<div style="flex:1;background:var(--accent);opacity:${.35+e*.55};border-radius:1px;height:${Math.max(4,(e*(k>1&&k<6?1:.7))*46)|0}px"></div>`).join('');
+      const role=document.createElement('button');
+      role.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:6px;border:1px solid var(--line);background:var(--panel2);color:var(--accent);cursor:pointer;border-radius:6px;padding:6px 9px;font:600 12px 'Space Grotesk';text-transform:capitalize";
+      role.innerHTML=`${seg.role}<span style="color:var(--muted);font-size:9px">▾</span>`;
+      role.title='Click to change the detected role';
+      role.onclick=()=>{ seg.role=roles[(roles.indexOf(seg.role)+1)%roles.length]; this.renderDropSections(); };
+      const meta=document.createElement('div'); meta.style.cssText="font:500 10px 'IBM Plex Mono';color:var(--muted)"; meta.textContent=`${seg.bars} bars · ${Math.round(e*100)}%`;
+      d.appendChild(bars); d.appendChild(role); d.appendChild(meta); wrap.appendChild(d);
+    });
+  }
+  _buildFromDrop(){
+    const bpm=+this.q('[data-drop-bpm]').textContent; this.bpm=bpm; this.bpmFromSong=true;
+    const p=this.PROFILES[this.profile];
+    const segs=this.dropSegs||[{role:'intro',bars:4},{role:'verse',bars:8},{role:'chorus',bars:8},{role:'verse',bars:8},{role:'chorus',bars:8},{role:'bridge',bars:4},{role:'chorus',bars:8}];
+    this.arr=segs.map((seg,i)=>({role:seg.role,bars:seg.bars,fill:i<segs.length-1,crash:seg.role==='chorus',groove:p.roles[seg.role]||p.roles.verse}));
+    this.sel=0; this.setMode('generate'); this.renderAll(); this._restartTimer();
+    const banner=this.q('[data-fit-banner]'); banner.style.display='flex';
+    this.q('[data-fit-text]').textContent=`Fitted to ${this.dropFile} · ${bpm} BPM (${this.align==='grid'?'fixed grid':'follow beats'})`;
+    this.q('[data-outpath]').textContent='~/Drums/'+(this.dropFile||'track').replace(/\.[^.]+$/,'')+'_drums.mid';
+    this.toast('Drums fitted to '+this.dropFile);
+  }
+
+  renderVals(){ return {}; }
+}
+</script>
+</body>
+</html>
