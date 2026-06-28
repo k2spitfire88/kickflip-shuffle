@@ -43,6 +43,7 @@ Derived from `HANDOFF_pop_punk_drum_gui.md`, the engine skill zip, and the Claud
 3. **Editable grid rows.** Expose the resolved groove dict (post-`_apply_axes`/`_normalize`, **pre-humanize-jitter**) so the UI sequencer edits the real pattern, not jittered events. Events stay the source for playback + MIDI export only.
 
 4. **Half-time shuffle groove (name-justifying add).** The app is named for the Barker half-time shuffle, so the engine should *have* one. Audit the ~26 `GROOVES` for a shuffle/swung pattern; if absent, add a `half_time_shuffle` groove (swung 16ths, ghost-noted snare, backbeat on 3) and reference it from the `barker` (and optionally `tre_cool`) profile pools. Additive data entry, no logic change.
+   - **Phase 1 note (2026-06-28):** `half_time_shuffle` was added **define-only** — NOT wired into the `barker`/`tre_cool` pools. Auto-wiring would change those profiles' `_pick`/`_resolve_groove` rng draws and break the byte-identical golden baseline. Select it explicitly via `section["groove"]`; pool-wiring is intentionally deferred (opt-in after audition).
 
 ## Native-path consequences (design HTML is reference only)
 

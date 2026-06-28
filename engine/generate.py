@@ -30,12 +30,21 @@ Axes (set per profile, overridable per song via "overrides"):
 
 import argparse
 import json
+import os
 import random
+import re
 
 try:
     import mido
 except ImportError:
     raise SystemExit("This script needs mido. Install with: pip install mido")
+
+try:                                    # package import
+    from .output_maps import (GENERAL_MIDI, ROLES, OUTPUT_MAPS,
+                              list_output_maps, get_output_map)
+except ImportError:                      # run directly as a script
+    from output_maps import (GENERAL_MIDI, ROLES, OUTPUT_MAPS,
+                             list_output_maps, get_output_map)
 
 # ---------------------------------------------------------------------------
 GM = {
@@ -165,6 +174,16 @@ GROOVES = {
     # Calmer pre-chorus
     "verse_ride": {"ride": _hat8(78, 92), "ride_bell": {0: 96, 8: 96},
                    "snare": {4: 108, 12: 108}, "kick": {0: 104, 8: 100}},
+
+    # The namesake: Barker/Purdie half-time shuffle — backbeat on 3 only,
+    # swung 16th hats (downbeat + swung "a", "e" dropped for the triplet
+    # bounce), ghost-noted snare around the backbeat. Define-only; select it
+    # explicitly per section (not wired into a profile pool).
+    "half_time_shuffle": {
+        "hat": {0: 88, 2: 62, 3: 74, 4: 88, 6: 62, 7: 74,
+                8: 88, 10: 62, 11: 74, 12: 88, 14: 62, 15: 74},
+        "snare": {3: 34, 7: 40, 8: 116, 11: 34, 15: 38},
+        "kick": {0: 108, 10: 96}},
 }
 
 
@@ -518,49 +537,81 @@ def _resolve_groove(sec, prof, rng, breakdown=0.0):
     return _pick(pool, rng)
 
 
-def build_song(spec, tempo=None, seed=None):
-    rng = random.Random(seed)
+def _effective_axes(sec, glob):
+    """Merge a section's optional `axes` over the global axis values, per key.
+
+    `glob` is the dict of global (overrides->profile) axis values. A section
+    that omits `axes` (or a key within it) inherits the global value verbatim,
+    so the global-only path stays byte-identical. humanize's global value
+    already carries its 3-tier (overrides->spec->profile) resolution; a section
+    may override it on top.
+    """
+    sax = sec.get("axes", {})
+    return {k: sax.get(k, glob[k]) for k in glob}
+
+
+def _resolved_bar_rows(base, sec, b, bars, want_fill, fill_name, ax, rng):
+    """Resolve a single bar's pattern dict, PRE humanize-jitter.
+
+    Scope is deliberately narrow: normalize + _apply_axes + optional crash
+    accent only. Groove/fill selection (the per-section draws) happen in the
+    caller, ONCE per section. `rng` is the caller's stream (never created here),
+    so draw order/count is preserved.
+    """
+    if want_fill and b == bars - 1:
+        return _normalize(FILLS[fill_name]())
+    groove = _apply_axes(base, ghost=ax["ghost"], ornament=ax["ornament"],
+                         double_bass=ax["double_bass"],
+                         syncopation=ax["syncopation"], rng=rng)
+    if sec.get("crash_in", False) and b == 0:
+        groove = _add_crash_accent(groove)
+    return groove
+
+
+def _iter_bars(spec, rng, omap):
+    """Drive the full per-section / per-bar resolution off a single rng stream.
+
+    Yields `(bar_index, rows, bar_events)` where `rows` is the bar's pattern
+    dict PRE-jitter and `bar_events` are its `(t, note, vel, dur)` tuples. Both
+    `build_song` (events) and `resolved_bar` (rows) consume this generator, so
+    they see an identical draw sequence by construction — the basis of the
+    byte-identical guarantee and the resolved_bar==rendered-bar mirror.
+    """
     ppq = spec.get("ppq", 480)
     step_ticks = ppq // (STEPS // 4)
-
     prof = PROFILES.get(spec.get("profile", "pop_punk"), PROFILES["pop_punk"])
     ov = spec.get("overrides", {})
     A = lambda k: ov.get(k, prof.get(k))
-    ghost, ornament = A("ghost"), A("ornament")
-    double_bass, syncopation = A("double_bass"), A("syncopation")
-    breakdown, fill_prob = A("breakdown"), A("fill_prob")
-    h = ov.get("humanize", spec.get("humanize", prof["humanize"]))
+    glob = {"ghost": A("ghost"), "ornament": A("ornament"),
+            "double_bass": A("double_bass"), "syncopation": A("syncopation"),
+            "breakdown": A("breakdown"), "fill_prob": A("fill_prob"),
+            "humanize": ov.get("humanize", spec.get("humanize",
+                                                    prof["humanize"]))}
 
-    events = []
     bar_index = 0
     for sec in spec["sections"]:
-        groove_name = _resolve_groove(sec, prof, rng, breakdown=breakdown)
+        ax = _effective_axes(sec, glob)
+        groove_name = _resolve_groove(sec, prof, rng, breakdown=ax["breakdown"])
         if groove_name not in GROOVES:
             raise ValueError(f"Unknown groove '{groove_name}'. "
                              f"Options: {sorted(GROOVES)}")
         base = _normalize(GROOVES[groove_name])
         bars = sec.get("bars", 4)
-        crash_in = sec.get("crash_in", False)
 
         want_fill = sec.get("fill") or (sec.get("fill_at_end") and
-                                        rng.random() < fill_prob)
+                                        rng.random() < ax["fill_prob"])
         fill_name = sec.get("fill") if isinstance(sec.get("fill"), str) else None
         if want_fill and not fill_name:
             fill_name = _pick(prof["fills"], rng)
 
         for b in range(bars):
-            if want_fill and b == bars - 1:
-                groove = _normalize(FILLS[fill_name]())
-            else:
-                groove = _apply_axes(base, ghost=ghost, ornament=ornament,
-                                     double_bass=double_bass,
-                                     syncopation=syncopation, rng=rng)
-                if crash_in and b == 0:
-                    groove = _add_crash_accent(groove)
-
+            rows = _resolved_bar_rows(base, sec, b, bars, want_fill,
+                                      fill_name, ax, rng)
+            h = ax["humanize"]
             bar_start = bar_index * STEPS * step_ticks
-            for inst, row in groove.items():
-                note = GM[inst]
+            bar_events = []
+            for inst, row in rows.items():
+                note = omap[inst]
                 for step, vel in enumerate(row):
                     if not vel:
                         continue
@@ -568,11 +619,48 @@ def build_song(spec, tempo=None, seed=None):
                     tjit = int(rng.uniform(-6, 6) * h)
                     v = max(1, min(127, vel + vjit))
                     t = max(0, bar_start + step * step_ticks + tjit)
-                    events.append((t, note, v, step_ticks - 2))
+                    bar_events.append((t, note, v, step_ticks - 2))
+            yield bar_index, rows, bar_events
             bar_index += 1
 
+
+def build_song(spec, tempo=None, seed=None, output_map=None):
+    rng = random.Random(seed)
+    omap = output_map if output_map is not None else GENERAL_MIDI
+    events = []
+    for _bi, _rows, bar_events in _iter_bars(spec, rng, omap):
+        events.extend(bar_events)
     events.sort(key=lambda e: e[0])
     return events
+
+
+def resolved_bar(spec, section_index, bar_index, seed=None, output_map=None):
+    """Return the PRE-jitter pattern dict (inst -> [16 vels]) for one bar,
+    exactly as `build_song` renders it at the same (section, bar) position.
+
+    For the UI sequencer: the editable pattern is the real one build_song uses
+    (MIRROR contract). `output_map` is accepted for symmetry but does not affect
+    rows (it only resolves note numbers in events).
+    """
+    sections = spec["sections"]
+    if not 0 <= section_index < len(sections):
+        raise IndexError(f"section_index {section_index} out of range "
+                         f"(0..{len(sections) - 1})")
+    sec_bars = sections[section_index].get("bars", 4)
+    if not 0 <= bar_index < sec_bars:
+        raise IndexError(f"bar_index {bar_index} out of range for section "
+                         f"{section_index} (0..{sec_bars - 1})")
+    target = sum(s.get("bars", 4) for s in sections[:section_index]) + bar_index
+
+    # Rows are pre-jitter patterns independent of the note mapping; drive the
+    # generator with the always-complete default map so a partial custom
+    # `output_map` can never KeyError here (the param is accepted for API
+    # symmetry only and does not affect rows).
+    rng = random.Random(seed)
+    for bi, rows, _ev in _iter_bars(spec, rng, GENERAL_MIDI):
+        if bi == target:
+            return rows
+    raise IndexError(f"bar {target} not produced")  # pragma: no cover
 
 
 def write_midi(events, out_path, tempo=170, ppq=480):
@@ -594,6 +682,72 @@ def write_midi(events, out_path, tempo=170, ppq=480):
                                   channel=9, note=note, velocity=vel, time=delta))
     mid.save(out_path)
     return out_path
+
+
+# ---------------------------------------------------------------------------
+# Library helpers (read-only, for the controller / UI)
+# ---------------------------------------------------------------------------
+_DOCS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                          "references", "grooves.md")
+_AXIS_KEYS = ("ghost", "ornament", "double_bass", "syncopation",
+              "breakdown", "fill_prob", "humanize")
+
+
+def _parse_doc_descriptions(path=_DOCS_PATH):
+    """Parse `references/grooves.md` -> ({groove: desc}, {fill: desc}).
+
+    Grooves are `### name — desc` (§3 headings); fills are `- **name** — desc`
+    (§4 bullets). The em dash (—) is the field separator.
+    """
+    grooves, fills = {}, {}
+    try:
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                m = re.match(r"^###\s+(\w+)\s+—\s+(.+?)\s*$", line)
+                if m:
+                    grooves[m.group(1)] = m.group(2)
+                    continue
+                m = re.match(r"^-\s+\*\*(\w+)\*\*\s+—\s+(.+?)\s*$", line)
+                if m:
+                    fills[m.group(1)] = m.group(2)
+    except FileNotFoundError:
+        pass
+    return grooves, fills
+
+
+def list_profiles():
+    """[{name, era, tempo, axes:{...7...}}] in definition order."""
+    return [{"name": n, "era": p["era"], "tempo": p["tempo"],
+             "axes": {k: p[k] for k in _AXIS_KEYS}}
+            for n, p in PROFILES.items()]
+
+
+def list_grooves():
+    """[{name, description}] for every GROOVES key (description from grooves.md)."""
+    desc, _ = _parse_doc_descriptions()
+    return [{"name": n, "description": desc.get(n)} for n in GROOVES]
+
+
+def list_fills():
+    """[{name, description}] for every FILLS key (description from grooves.md)."""
+    _, desc = _parse_doc_descriptions()
+    return [{"name": n, "description": desc.get(n)} for n in FILLS]
+
+
+def note_ladder_events(output_map=None, ppq=480, vel=100):
+    """One hit per symbolic role, in ROLES order, one beat apart."""
+    omap = output_map if output_map is not None else GENERAL_MIDI
+    return [(i * ppq, omap[role], vel, ppq // 2)
+            for i, role in enumerate(ROLES)]
+
+
+def write_note_ladder(out_path, output_map=None, tempo=120, ppq=480):
+    """Emit a .mid striking each of the 17 roles once (ROLES order, one per
+    beat). Drag into a sampler (e.g. EZ Drummer 3) to validate which
+    articulation each role triggers under a given output map — the way to
+    verify EZ_DRUMMER_3's UNVERIFIED note numbers."""
+    return write_midi(note_ladder_events(output_map, ppq=ppq), out_path,
+                      tempo=tempo, ppq=ppq)
 
 
 def main():

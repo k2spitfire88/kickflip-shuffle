@@ -131,6 +131,24 @@ Snare . . . . X . . . . . . . X . . .
 Kick  X . . . . . . . X . . . . . . .
 ```
 
+### two_step — two-step punk beat, kick on 1 and 3, backbeat on 2 & 4
+### ramones_buzzsaw — relentless straight-8th buzzsaw, kick on every quarter
+### four_floor — four-on-the-floor kick under a straight 2 & 4 backbeat
+### dbeat — hardcore d-beat, backbeat 2 & 4 with the signature off-kick on the "e of 1"
+### blast_beat — blast beat, full-tilt alternating kick/snare 8ths
+### ska_punk — ska feel, rim backbeat with open-hat offbeat upstroke chops
+### double_bass_verse — verse thickened with 16th double-kick clusters before the snare
+### disco_punk — Fall Out Boy "Dance Dance" four-on-floor with open-hat offbeats
+### tribal_toms — Paramore tom-driven groove, floor/low toms carrying the pulse
+### emo_syncopated — mid-tempo emo with a syncopated kick and a ghost before 4
+### trap_hat_modern — 2020s revival, trap-bounce 16th hats, sub kick, crisp snare
+### breakdown_chug — easycore breakdown, china + half-time snare over chugging double kick
+### gang_break — gang-vocal breakdown hit, crash + snare on 1 and 3, sparse
+### longview_tom — Green Day "Longview" sparse tom-and-floor verse
+### chorus_ride_bell — chorus riding the ride with bell accents on 1 and 3
+### chorus_doublebass — big chorus, crash quarters over 16th double-kick
+### half_time_shuffle — Barker/Purdie half-time shuffle: backbeat on 3, swung 16th hats, ghost snares
+
 ---
 
 ## 4. Fills
@@ -144,6 +162,15 @@ rudimental. The generator provides:
   pre-chorus lift.
 - **halfbar_toms** — groove for the first half-bar, tom flurry on the second.
 - **triplet_snare** — snare triplet figure into the downbeat (Barker-ism).
+- **ramones_crash** — a bar of straight 8ths capped with a crash; no-frills '77 turnaround.
+- **dbeat_roll** — galloping d-beat roll driving into the downbeat.
+- **marching_toms** — rudimental marching-snare/tom flurry (the drumline DNA).
+- **sparse_tom** — minimal single tom-hit pickup that leaves space.
+- **double_bass** — double-kick burst under a snare accent.
+- **blast** — a short blast-beat burst used as a fill.
+- **china_choke** — a china hit choked into the downbeat.
+- **linear** — linear fill: no two limbs strike together (kick/snare/tom interlock).
+- **tom_around** — classic tom-around-the-kit, high tom down to floor.
 
 Placement convention: put a fill on the **last bar** of a section that leads into
 a new section (verse→chorus, chorus→verse). Don't fill every 4 bars mechanically;
