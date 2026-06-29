@@ -6,6 +6,10 @@ build/
 dist/
 *.egg-info/
 .DS_Store
+
+# local Claude Code workspace (skills, settings) — not part of the app
+.claude/
+
 # large bundled binary asset (download separately, see HANDOFF.md)
 assets/soundfonts/*.sf2
 
