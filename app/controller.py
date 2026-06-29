@@ -29,6 +29,7 @@ Engine invariants honoured here
 import random
 
 import engine
+from . import analyze
 
 # Upper bound for an auto-drawn seed. 2**63 keeps it a positive 64-bit int,
 # comfortably within Python's arbitrary-precision range and JSON-serialisable
@@ -44,6 +45,7 @@ class Controller:
         self._output_map = output_map
         self._seed = int(seed) if seed is not None else None
         self._spec = None
+        self._analysis = None
 
     # ------------------------------------------------------------------
     # Held state (read accessors the UI renders from)
@@ -215,13 +217,33 @@ class Controller:
         return engine.write_note_ladder(out_path, output_map=omap)
 
     # ------------------------------------------------------------------
+    # Audio analysis (F2) — librosa audio -> editable result -> spec
+    # ------------------------------------------------------------------
+    @property
+    def analysis(self):
+        """The last AnalysisResult produced by analyze_audio, or None."""
+        return self._analysis
+
+    def analyze_audio(self, path, *, alignment="fixed_grid", known_tempo=None):
+        """Analyse an audio file into an editable AnalysisResult; hold it."""
+        self._analysis = analyze.analyze_audio(
+            path, alignment=alignment, known_tempo=known_tempo)
+        return self._analysis
+
+    def spec_from_analysis(self, profile, *, result=None, overrides=None):
+        """Build (and hold as current) an engine spec from an analysis result and
+        a chosen profile. `result` defaults to the held analysis."""
+        result = result if result is not None else self._analysis
+        if result is None:
+            raise ValueError("no analysis; call analyze_audio or pass result=")
+        self._spec = analyze.spec_from_analysis(result, profile, overrides=overrides)
+        return self._spec
+
+    # ------------------------------------------------------------------
     # Future-phase capabilities — surface locked now, bodies land later.
     # ------------------------------------------------------------------
     def render_preview(self, spec=None):
         raise NotImplementedError("Phase 4: F4 playback render (render_preview)")
-
-    def analyze_audio(self, path):
-        raise NotImplementedError("Phase 3: F2 audio analysis (analyze_audio)")
 
     def play(self, *args, **kwargs):
         raise NotImplementedError("Phase 4: F4 transport (play)")

@@ -196,13 +196,43 @@ def test_per_section_axes_change_rows():
 # ---------------------------------------------------------------------------
 @pytest.mark.parametrize("call", [
     lambda c: c.render_preview(),
-    lambda c: c.analyze_audio("x.wav"),
     lambda c: c.play(),
     lambda c: c.stop(),
 ])
 def test_future_stubs_raise(call):
     with pytest.raises(NotImplementedError):
         call(Controller())
+
+
+# ---------------------------------------------------------------------------
+# 8. audio-analysis wiring (monkeypatched analyze -> fast, deterministic)
+# ---------------------------------------------------------------------------
+def test_analyze_audio_wiring(monkeypatch):
+    from app import analyze
+    fake = analyze.AnalysisResult(
+        tempo=174.0, sr=22050, duration=8.0, alignment="fixed_grid",
+        beat_times=[], downbeat_times=[],
+        segments=[(0.0, 4.0), (4.0, 8.0)], segment_energy=[0.2, 0.9],
+        sections=[{"role": "verse", "bars": 4, "fill_at_end": True},
+                  {"role": "chorus", "bars": 4, "crash_in": True}],
+        confidence={"tempo": 0.0, "segmentation": "fixed_fallback"})
+    monkeypatch.setattr(analyze, "analyze_audio", lambda path, **kw: fake)
+
+    c = Controller()
+    assert c.analysis is None
+    got = c.analyze_audio("whatever.wav")
+    assert got is fake and c.analysis is fake
+
+    spec = c.spec_from_analysis("pop_punk")
+    assert spec["tempo"] == 174.0
+    assert spec["sections"] == fake.sections
+    assert c.spec is spec
+    assert engine.build_song(spec, seed=1)  # engine accepts the analysis spec
+
+
+def test_spec_from_analysis_requires_analysis():
+    with pytest.raises(ValueError):
+        Controller().spec_from_analysis("pop_punk")
 
 
 # ---------------------------------------------------------------------------
