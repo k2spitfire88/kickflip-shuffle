@@ -5,6 +5,9 @@ import sys
 # regardless of pytest's rootdir/import-mode.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# Run Qt headless in tests (must be set before any QApplication is created).
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
 
 def pytest_configure(config):
     config.addinivalue_line(

@@ -1,3 +1,4 @@
 # Dev / test-only deps (NOT bundled into the .app)
 -r requirements.txt
 pytest>=8.0
+pytest-qt>=4.4
