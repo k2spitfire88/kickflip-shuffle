@@ -192,16 +192,72 @@ def test_per_section_axes_change_rows():
 
 
 # ---------------------------------------------------------------------------
-# 6. future-phase stubs
+# 6. playback wiring (monkeypatched render + Player -> no real audio/device)
 # ---------------------------------------------------------------------------
-@pytest.mark.parametrize("call", [
-    lambda c: c.render_preview(),
-    lambda c: c.play(),
-    lambda c: c.stop(),
-])
-def test_future_stubs_raise(call):
-    with pytest.raises(NotImplementedError):
-        call(Controller())
+class _FakePlayer:
+    def __init__(self):
+        self.calls = []
+
+    def load(self, buf, sr):
+        self.calls.append(("load", len(buf), sr))
+
+    def play(self):
+        self.calls.append(("play",))
+
+    def stop(self):
+        self.calls.append(("stop",))
+
+
+def _patch_playback(monkeypatch, captured):
+    import numpy as np
+    from app import playback
+
+    def fake_render(events, **kw):
+        captured["events"] = events
+        captured["map_notes"] = {n for _, n, _, _ in events}
+        return np.ones((100, 2), dtype=np.float32)  # non-silent
+
+    monkeypatch.setattr(playback, "render_events", fake_render)
+    fp = _FakePlayer()
+    monkeypatch.setattr(playback, "Player", lambda: fp)
+    return fp
+
+
+def test_render_preview_holds_buffer_and_uses_general_midi(monkeypatch):
+    captured = {}
+    _patch_playback(monkeypatch, captured)
+    c = Controller()
+    c.song_from_profile("pop_punk")
+    buf = c.render_preview(seed=TOM_SEED)
+    assert buf.shape[1] == 2 and float(buf.max()) > 0  # non-silent
+    assert c._preview_buf is buf
+    # Preview is rendered in GENERAL_MIDI regardless of the selected export map.
+    c2 = Controller()
+    c2.song_from_profile("pop_punk")
+    c2.set_output_map("EZ_DRUMMER_3")
+    c2.render_preview(seed=TOM_SEED)
+    gm_notes = {engine.GENERAL_MIDI[r] for r in engine.ROLES}
+    assert captured["map_notes"] <= gm_notes
+
+
+def test_play_renders_on_demand_then_plays(monkeypatch):
+    fp = _patch_playback(monkeypatch, {})
+    c = Controller()
+    c.song_from_profile("pop_punk")
+    c.play()                       # no preview held -> render-on-demand
+    kinds = [x[0] for x in fp.calls]
+    assert kinds == ["load", "play"]
+    c.stop()
+    assert fp.calls[-1] == ("stop",)
+
+
+def test_play_without_spec_or_preview_raises():
+    with pytest.raises(ValueError):
+        Controller().play()
+
+
+def test_stop_without_player_is_noop():
+    Controller().stop()  # no player yet -> must not raise
 
 
 # ---------------------------------------------------------------------------

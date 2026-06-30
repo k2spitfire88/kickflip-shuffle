@@ -46,6 +46,11 @@ class Controller:
         self._seed = int(seed) if seed is not None else None
         self._spec = None
         self._analysis = None
+        self._context_audio = None
+        self._context_sr = None
+        self._preview_buf = None
+        self._preview_sr = None
+        self._player = None
 
     # ------------------------------------------------------------------
     # Held state (read accessors the UI renders from)
@@ -240,13 +245,62 @@ class Controller:
         return self._spec
 
     # ------------------------------------------------------------------
-    # Future-phase capabilities — surface locked now, bodies land later.
+    # Playback (F4) — offline render -> buffer -> sounddevice transport
     # ------------------------------------------------------------------
-    def render_preview(self, spec=None):
-        raise NotImplementedError("Phase 4: F4 playback render (render_preview)")
+    def load_context_audio(self, path, *, sample_rate=44100):
+        """Load an audio track to mix previews over ('hear it over my track')."""
+        from . import playback  # lazy: keep the MIDI path usable without audio libs
+        self._context_audio = playback.load_audio(path, sample_rate=sample_rate)
+        self._context_sr = sample_rate
+        return self._context_audio
 
-    def play(self, *args, **kwargs):
-        raise NotImplementedError("Phase 4: F4 transport (play)")
+    def render_preview(self, spec=None, *, seed=None, sample_rate=44100,
+                       with_context=False):
+        """Render the spec's drums to an audio buffer and hold it.
+
+        Preview always uses GENERAL_MIDI (the bundled sf2 is a GM bank; an EZD3
+        map would mis-trigger), consistent with `generate`. Held-seed contract
+        matches `generate`. With `with_context`, mixes over the loaded context
+        track. Returns a stereo float32 buffer.
+        """
+        from . import playback
+        spec = spec if spec is not None else self._spec
+        if spec is None:
+            raise ValueError("no spec to render; generate/build a spec or pass spec=")
+        if seed is not None:
+            self._seed = int(seed)
+        self._spec = spec
+        events = engine.build_song(spec, seed=self._ensure_seed(),
+                                   output_map=engine.GENERAL_MIDI)
+        buf = playback.render_events(
+            events, tempo=spec.get("tempo") or engine.PROFILES[spec["profile"]]["tempo"],
+            ppq=spec.get("ppq", 480), sample_rate=sample_rate)
+        if with_context and self._context_audio is not None:
+            buf = playback.mix(buf, self._context_audio)
+        self._preview_buf, self._preview_sr = buf, sample_rate
+        return buf
+
+    def play(self, *, with_context=False):
+        """Play the held preview (rendering on demand from the current spec if
+        none is held). Raises if there is neither a preview nor a spec."""
+        from . import playback
+        if self._preview_buf is None:
+            if self._spec is None:
+                raise ValueError("nothing to play: no rendered preview and no spec")
+            self.render_preview(with_context=with_context)
+        if self._player is None:
+            self._player = playback.Player()
+        self._player.load(self._preview_buf, self._preview_sr)
+        self._player.play()
 
     def stop(self):
-        raise NotImplementedError("Phase 4: F4 transport (stop)")
+        if self._player is not None:
+            self._player.stop()
+
+    def seek(self, seconds):
+        if self._player is not None:
+            self._player.seek(seconds)
+
+    @property
+    def playback_position(self):
+        return self._player.position if self._player is not None else 0.0
