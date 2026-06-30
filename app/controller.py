@@ -26,6 +26,7 @@ Engine invariants honoured here
   * Drums emit on MIDI channel 9 (handled inside ``write_midi``).
   * ``seed`` is the only source of randomness — plumbed through every call.
 """
+import copy
 import random
 
 import engine
@@ -73,12 +74,19 @@ class Controller:
     def set_seed(self, n):
         """Pin the seed (UI 'lock seed'). Returns the stored int."""
         self._seed = int(n)
+        self._invalidate_preview()
         return self._seed
 
     def new_seed(self):
         """Draw, store, and return a fresh seed (UI 'reroll')."""
         self._seed = random.randrange(_SEED_BOUND)
+        self._invalidate_preview()
         return self._seed
+
+    def _invalidate_preview(self):
+        """Drop the held preview buffer so the next play() re-renders. Called on
+        any change that alters the rendered output (spec edit or seed change)."""
+        self._preview_buf = None
 
     def set_output_map(self, name):
         """Select the output map by name (validated). Returns the name."""
@@ -189,6 +197,71 @@ class Controller:
             raise ValueError("no spec; pass spec= or build one first")
         s = int(seed) if seed is not None else self._ensure_seed()
         return engine.resolved_bar(spec, section_index, bar_index, seed=s)
+
+    # ------------------------------------------------------------------
+    # Arrangement editing (5a-ii) — mutate the held spec in place so per-bar
+    # `patterns` overrides and unknown keys are never dropped.
+    # ------------------------------------------------------------------
+    def _require_spec(self):
+        if self._spec is None:
+            raise ValueError("no spec; build one (song_from_profile/...) first")
+        return self._spec
+
+    def set_bar_pattern(self, section_index, bar_index, rows):
+        """Store an edited grid pattern for (section, bar). Bar key is int."""
+        engine._validate_pattern(rows)
+        sec = self._require_spec()["sections"][section_index]
+        sec.setdefault("patterns", {})[int(bar_index)] = copy.deepcopy(rows)
+        self._invalidate_preview()
+        return self._spec
+
+    def clear_bar_pattern(self, section_index, bar_index):
+        """Remove a bar override (revert to generated). No-op if absent."""
+        sec = self._require_spec()["sections"][section_index]
+        patterns = sec.get("patterns")
+        if patterns:
+            patterns.pop(int(bar_index), None)
+            patterns.pop(str(bar_index), None)
+            if not patterns:
+                sec.pop("patterns", None)
+            self._invalidate_preview()
+        return self._spec
+
+    @staticmethod
+    def _prune_patterns(sec):
+        """Drop overrides whose bar index is now out of range for the section."""
+        patterns = sec.get("patterns")
+        if patterns:
+            bars = sec.get("bars", 4)
+            for key in [k for k in patterns if int(k) >= bars]:
+                del patterns[key]
+            if not patterns:
+                sec.pop("patterns", None)
+
+    def set_sections(self, sections):
+        """Replace the arrangement using the given (existing) section dict
+        references — preserves each section's `patterns`/unknown keys. Globals
+        (profile/overrides/tempo/ppq) untouched."""
+        spec = self._require_spec()
+        for sec in sections:
+            self._prune_patterns(sec)
+        spec["sections"] = list(sections)
+        self._invalidate_preview()
+        return spec
+
+    def update_section(self, index, **fields):
+        """Overlay changed fields (role/groove/fill/crash_in/bars/axes) onto the
+        EXISTING section dict (so `patterns` survive). Prunes out-of-range
+        overrides if `bars` shrank."""
+        sec = self._require_spec()["sections"][index]
+        for key, value in fields.items():
+            if value is None:               # None -> unset (e.g. groove "from role")
+                sec.pop(key, None)
+            else:
+                sec[key] = value
+        self._prune_patterns(sec)
+        self._invalidate_preview()
+        return self._spec
 
     # ------------------------------------------------------------------
     # Export (selected output map; explicit destination this phase)

@@ -14,6 +14,13 @@ SPECS = [
       "sections": [{"groove": "chorus_ride_bell", "bars": 2, "crash_in": True},
                    {"groove": "verse_basic", "bars": 2, "fill": "china_choke"},
                    {"groove": "verse_basic", "bars": 2, "fill": "tom_descend"}]}, 99),
+    # A mid-song pattern override: asserts the MIRROR still holds for bars AFTER
+    # the override despite the rng-stream shift (resolved_bar(b+k)==build bar b+k).
+    ({"ppq": 480, "profile": "pop_punk", "tempo": 170, "overrides": {},
+      "sections": [{"groove": "verse_basic", "bars": 3,
+                    "patterns": {1: {"kick": [100, 0, 0, 0] * 4,
+                                     "snare": [0, 0, 0, 0, 80] + [0] * 11}}},
+                   {"groove": "chorus_ride_bell", "bars": 2, "crash_in": True}]}, 11),
 ]
 
 

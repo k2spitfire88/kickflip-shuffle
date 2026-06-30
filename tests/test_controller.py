@@ -292,6 +292,60 @@ def test_spec_from_analysis_requires_analysis():
 
 
 # ---------------------------------------------------------------------------
+# 9. arrangement / grid editing (5a-ii)
+# ---------------------------------------------------------------------------
+_KICK4 = [100, 0, 0, 0] * 4
+
+
+def test_set_and_clear_bar_pattern():
+    c = Controller()
+    c.song_from_profile("pop_punk")
+    c.set_bar_pattern(1, 0, {"kick": _KICK4})
+    assert c.spec["sections"][1]["patterns"][0] == {"kick": _KICK4}
+    assert c.resolved_bar(1, 0, seed=1) == {"kick": _KICK4}   # mirror reflects it
+    c.clear_bar_pattern(1, 0)
+    assert "patterns" not in c.spec["sections"][1]
+
+
+def test_set_bar_pattern_validates():
+    c = Controller()
+    c.song_from_profile("pop_punk")
+    with pytest.raises(ValueError):
+        c.set_bar_pattern(0, 0, {"kick": [0, 1, 200] + [0] * 13})
+
+
+def test_set_sections_preserves_patterns_through_reorder():
+    c = Controller()
+    c.song_from_profile("pop_punk")
+    c.set_bar_pattern(0, 0, {"snare": [80] + [0] * 15})
+    secs = c.spec["sections"]
+    c.set_sections(list(reversed(secs)))           # reorder by dict reference
+    assert c.spec["sections"][-1]["patterns"][0] == {"snare": [80] + [0] * 15}
+
+
+def test_update_section_preserves_and_prunes():
+    c = Controller()
+    c.build_spec_from_ui_state("pop_punk",
+                               sections=[{"groove": "verse_basic", "bars": 4}])
+    c.set_bar_pattern(0, 3, {"kick": _KICK4})
+    c.update_section(0, bars=2)                     # bar 3 now out of range
+    assert "patterns" not in c.spec["sections"][0]  # pruned
+
+
+def test_seed_reroll_invalidates_preview(monkeypatch):
+    import numpy as np
+    from app import playback
+    monkeypatch.setattr(playback, "render_events",
+                        lambda events, **kw: np.ones((10, 2), dtype=np.float32))
+    c = Controller()
+    c.song_from_profile("pop_punk")
+    c.render_preview(seed=1)
+    assert c._preview_buf is not None
+    c.new_seed()
+    assert c._preview_buf is None                   # reroll drops stale buffer
+
+
+# ---------------------------------------------------------------------------
 # 7. seed accessors + spec property
 # ---------------------------------------------------------------------------
 def test_seed_accessors():

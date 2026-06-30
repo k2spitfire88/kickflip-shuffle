@@ -153,6 +153,63 @@ def test_empty_state_controls_disabled(qtbot):
         assert not w.isEnabled()
 
 
+def test_editor_appears_on_select(qtbot):
+    v = _view(qtbot)
+    assert v.editor_panel.isHidden()           # isVisible() needs a shown window
+    v.profiles.setCurrentRow(0)
+    assert not v.editor_panel.isHidden() and v.empty_hint.isHidden()
+
+
+def test_timeline_add_remove_reorder(qtbot):
+    v = _view(qtbot)
+    v.profiles.setCurrentRow(0)
+    n = len(v._c.spec["sections"])
+    v.timeline._add()
+    assert len(v._c.spec["sections"]) == n + 1
+    first_role = v._c.spec["sections"][0].get("role")
+    v.timeline.list.setCurrentRow(0)
+    v.timeline._right()                        # swap sections 0 and 1
+    assert v._c.spec["sections"][1].get("role") == first_role
+    v.timeline.list.setCurrentRow(0)
+    v.timeline._remove()
+    assert len(v._c.spec["sections"]) == n
+
+
+def test_section_editor_updates_spec(qtbot):
+    v = _view(qtbot)
+    v.profiles.setCurrentRow(0)
+    v.section_editor.load(0)
+    v.section_editor.bars.setValue(6)
+    v.section_editor.crash.setChecked(True)
+    assert v._c.spec["sections"][0]["bars"] == 6
+    assert v._c.spec["sections"][0]["crash_in"] is True
+
+
+def test_grid_edit_sets_and_clears_pattern(qtbot):
+    from app.ui.editor_widgets import ROLES
+    v = _view(qtbot)
+    v.profiles.setCurrentRow(0)
+    v.grid.load(0)
+    cow = ROLES.index("cowbell")               # no groove emits it -> off, deterministic
+    v.grid.toggle(cow, 0)
+    pats = v._c.spec["sections"][0]["patterns"][0]
+    assert pats["cowbell"][0] == 100
+    assert v._c.resolved_bar(0, 0)["cowbell"][0] == 100   # mirror reflects edit
+    v.grid._reset()
+    assert "patterns" not in v._c.spec["sections"][0]
+
+
+def test_grid_override_survives_reorder(qtbot):
+    from app.ui.editor_widgets import ROLES
+    v = _view(qtbot)
+    v.profiles.setCurrentRow(0)
+    v.grid.load(0)
+    v.grid.toggle(ROLES.index("cowbell"), 4)
+    v.timeline.list.setCurrentRow(0)
+    v.timeline._right()                        # move section 0 -> index 1
+    assert v._c.spec["sections"][1]["patterns"][0]["cowbell"][4] == 100
+
+
 def test_play_error_is_surfaced_not_raised(qtbot, monkeypatch):
     v = _view(qtbot)
     v.profiles.setCurrentRow(0)

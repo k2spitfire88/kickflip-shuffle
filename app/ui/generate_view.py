@@ -129,6 +129,26 @@ class GenerateView(QWidget):
         transport.addWidget(self.export_btn)
         right.addLayout(transport)
 
+        # Arrangement editor (timeline + per-section editor + step grid), shown
+        # once a profile is selected.
+        from .editor_widgets import SectionTimeline, SectionEditor, StepGrid
+        self.editor_panel = QWidget()
+        ep = QVBoxLayout(self.editor_panel)
+        ep.setContentsMargins(0, 0, 0, 0)
+        self.timeline = SectionTimeline(self._c)
+        self.section_editor = SectionEditor(self._c)
+        self.grid = StepGrid(self._c)
+        ep.addWidget(self.timeline)
+        edit_row = QHBoxLayout()
+        edit_row.addWidget(self.section_editor, 1)
+        edit_row.addWidget(self.grid, 2)
+        ep.addLayout(edit_row)
+        self.timeline.sectionSelected.connect(self._select_section)
+        self.timeline.sectionsChanged.connect(self._on_sections_changed)
+        self.section_editor.changed.connect(self._on_section_edited)
+        right.addWidget(self.editor_panel, 1)
+        self.editor_panel.setVisible(False)
+
         # Empty-state hint (key art + prompt) shown until a profile is chosen.
         self.empty_hint = QLabel()
         self.empty_hint.setAlignment(Qt.AlignCenter)
@@ -270,6 +290,23 @@ class GenerateView(QWidget):
         self._refresh_seed_label()
         self._set_controls_enabled(True)
         self.empty_hint.setVisible(False)
+        self.editor_panel.setVisible(True)
+        self.timeline.refresh()
+        self.timeline.list.setCurrentRow(0)
+        self._select_section(0)
+
+    def _select_section(self, index):
+        self.section_editor.load(index)
+        self.grid.load(index)
+
+    def _on_sections_changed(self):
+        self._refresh_seed_label()           # spec mutated; seed/preview unaffected here
+
+    def _on_section_edited(self):
+        # role/bars label + groove/bars may change the resolved grid -> refresh both.
+        self.timeline.refresh()
+        if self.section_editor._i is not None:
+            self.grid.load(self.section_editor._i)
 
     def _refresh_seed_label(self):
         s = self._c.seed

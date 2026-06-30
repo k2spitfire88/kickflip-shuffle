@@ -568,6 +568,49 @@ def _resolved_bar_rows(base, sec, b, bars, want_fill, fill_name, ax, rng):
     return groove
 
 
+def _validate_pattern(rows):
+    """Validate an edited-grid pattern override: {inst: [STEPS vels]}.
+
+    Raises ValueError (never clamps/silently fixes) on a bad instrument, wrong
+    row length, non-int, or out-of-range velocity. An empty dict or all-zero
+    rows are legal (a silent bar).
+    """
+    if not isinstance(rows, dict):
+        raise ValueError("pattern must be a dict of inst -> velocity list")
+    for inst, row in rows.items():
+        if inst not in GM:
+            raise ValueError(f"unknown instrument '{inst}' (not in GM)")
+        if not isinstance(row, (list, tuple)) or len(row) != STEPS:
+            raise ValueError(f"pattern row for '{inst}' must be length {STEPS}")
+        for v in row:
+            if isinstance(v, bool) or not isinstance(v, int) or not 0 <= v <= 127:
+                raise ValueError(
+                    f"velocity {v!r} for '{inst}' must be an int in 0..127")
+    return rows
+
+
+def _bar_override(sec, b):
+    """Return a section's edited-grid override for bar `b`, or None.
+
+    PURE dict lookup — makes ZERO rng draws and does not alter control flow on
+    the None path; the byte-identical golden guarantee depends on this (a spec
+    with no `patterns` is exactly today's flow). Bar keys are accepted as int or
+    str (JSON/.ppd round-trip); a DEEP copy is returned so callers never alias
+    the stored spec rows.
+    """
+    patterns = sec.get("patterns")
+    if not patterns:
+        return None
+    if b in patterns:
+        rows = patterns[b]
+    elif str(b) in patterns:
+        rows = patterns[str(b)]
+    else:
+        return None
+    _validate_pattern(rows)
+    return {inst: list(row) for inst, row in rows.items()}
+
+
 def _iter_bars(spec, rng, omap):
     """Drive the full per-section / per-bar resolution off a single rng stream.
 
@@ -605,8 +648,12 @@ def _iter_bars(spec, rng, omap):
             fill_name = _pick(prof["fills"], rng)
 
         for b in range(bars):
-            rows = _resolved_bar_rows(base, sec, b, bars, want_fill,
-                                      fill_name, ax, rng)
+            override = _bar_override(sec, b)
+            if override is not None:
+                rows = override          # verbatim edited pattern; skip groove/axes
+            else:
+                rows = _resolved_bar_rows(base, sec, b, bars, want_fill,
+                                          fill_name, ax, rng)
             h = ax["humanize"]
             bar_start = bar_index * STEPS * step_ticks
             bar_events = []
