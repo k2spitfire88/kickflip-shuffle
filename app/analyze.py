@@ -78,14 +78,45 @@ def _label_roles(norm):
 
 
 def _alloc_bars(boundary_times, tempo, beats_per_bar):
-    """Bars per segment by CUMULATIVE rounding of boundary positions so the bar
-    counts track total length (no independent-per-segment rounding drift). Each
-    segment is floored to >=1 bar.
+    """Bars per segment so the counts SUM to the track's total bar length.
+
+    The boundaries are scaled proportionally onto the total bar count
+    (`round(duration * tempo/60 / beats_per_bar)`) rather than each rounded
+    against tempo independently — so the arrangement matches the source length
+    regardless of how the boundaries were produced (MFCC novelty or beat-snapped),
+    instead of overshooting. Each segment is still floored to >=1 bar; when there
+    are more segments than whole bars (sub-bar segments), the total is raised to
+    `n_segments` (the minimum that gives every segment a bar).
 
     `boundary_times` has len == n_segments + 1 (includes 0 and the track end).
     """
-    bar_pos = [round(t * tempo / 60.0 / beats_per_bar) for t in boundary_times]
-    return [max(1, bar_pos[i + 1] - bar_pos[i]) for i in range(len(bar_pos) - 1)]
+    n = len(boundary_times) - 1
+    if n <= 0:
+        return []
+    total = max(n, round(boundary_times[-1] * tempo / 60.0 / beats_per_bar))
+    widths = [boundary_times[i + 1] - boundary_times[i] for i in range(n)]
+    if sum(widths) <= 0:                        # degenerate: equal split
+        widths = [1.0] * n
+    ideal = [w / sum(widths) * total for w in widths]
+    bars = [max(1, int(f)) for f in ideal]      # floor, each >=1 bar
+    # Largest-remainder: distribute the rounding residual so SUM(bars) == total
+    # exactly (feasible since total >= n), instead of letting sub-bar segments
+    # each force a full extra bar (which overshoots the track length).
+    diff = total - sum(bars)
+    if diff > 0:
+        for i in sorted(range(n), key=lambda i: ideal[i] - int(ideal[i]),
+                        reverse=True)[:diff]:
+            bars[i] += 1
+    elif diff < 0:
+        order = sorted(range(n), key=lambda i: bars[i], reverse=True)
+        k = 0
+        while diff < 0:
+            i = order[k % n]
+            if bars[i] > 1:
+                bars[i] -= 1
+                diff += 1
+            k += 1
+    return bars
 
 
 def _sections_from(roles, bars, norm):
@@ -130,7 +161,9 @@ def analyze_audio(path, *, alignment="fixed_grid", known_tempo=None,
     beat_times = ([float(t) for t in librosa.frames_to_time(beat_frames, sr=sr)]
                   if beat_frames.size else [])
 
-    if known_tempo:
+    if known_tempo is not None:
+        if known_tempo <= 0:
+            raise ValueError(f"known_tempo must be > 0, got {known_tempo}")
         tempo = float(known_tempo)
     elif tempo_est > 0:
         tempo = tempo_est

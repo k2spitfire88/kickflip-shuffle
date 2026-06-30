@@ -49,6 +49,20 @@ def test_alloc_bars_subbar_floored_to_one():
     assert _alloc_bars([0.0, 1.0], tempo=120, beats_per_bar=4) == [1]
 
 
+def test_alloc_bars_sums_to_total_no_overshoot():
+    # A trailing sub-bar segment must NOT add a full extra bar (the prior overshoot).
+    bars = _alloc_bars([0.0, 6.83, 8.0], tempo=90, beats_per_bar=4)
+    assert sum(bars) == round(8.0 * 90 / 60 / 4)     # 3 bars (== 8 s), not 4
+    bars2 = _alloc_bars([0.0, 7.5, 8.0], tempo=120, beats_per_bar=4)
+    assert sum(bars2) == round(8.0 * 120 / 60 / 4)   # 4 bars (== 8 s), not 5
+
+
+def test_alloc_bars_more_segments_than_bars():
+    # 3 short segments, ~1.5 bars of material -> total raised to n, each >=1.
+    bars = _alloc_bars([0.0, 1.0, 2.0, 3.0], tempo=120, beats_per_bar=4)
+    assert sum(bars) == 3 and all(b >= 1 for b in bars)
+
+
 def test_sections_from_crash_fill_last():
     roles = ["verse", "chorus", "verse"]
     bars = [4, 4, 4]
@@ -108,6 +122,13 @@ def test_fixed_fallback_on_short_audio(tmp_path):
     r = analyze_audio(p, known_tempo=120)
     assert r.confidence["segmentation"] == "fixed_fallback"
     assert r.sections and all(s["bars"] >= 1 for s in r.sections)
+
+
+def test_known_tempo_nonpositive_raises(tmp_path):
+    p = str(tmp_path / "c.wav")
+    _write_clicks(p, dur=2.0)
+    with pytest.raises(ValueError):
+        analyze_audio(p, known_tempo=0)
 
 
 def test_follow_beats_downgrades_when_no_beats(tmp_path, monkeypatch):

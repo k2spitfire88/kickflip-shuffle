@@ -145,7 +145,7 @@ class Controller:
             raise ValueError(f"Unknown profile '{profile}'. "
                              f"Options: {sorted(engine.PROFILES)}")
         overrides = dict(axes or {})
-        spec_tempo = tempo if tempo is not None else engine.PROFILES[profile]["tempo"]
+        spec_tempo = float(tempo) if tempo is not None else float(engine.PROFILES[profile]["tempo"])
         if sections is None:
             sections = engine.song_from_profile(profile, overrides or None)["sections"]
         self._spec = {
@@ -229,10 +229,12 @@ class Controller:
         """The last AnalysisResult produced by analyze_audio, or None."""
         return self._analysis
 
-    def analyze_audio(self, path, *, alignment="fixed_grid", known_tempo=None):
+    def analyze_audio(self, path, *, alignment="fixed_grid", known_tempo=None,
+                      beats_per_bar=analyze.BEATS_PER_BAR_DEFAULT):
         """Analyse an audio file into an editable AnalysisResult; hold it."""
         self._analysis = analyze.analyze_audio(
-            path, alignment=alignment, known_tempo=known_tempo)
+            path, alignment=alignment, known_tempo=known_tempo,
+            beats_per_bar=beats_per_bar)
         return self._analysis
 
     def spec_from_analysis(self, profile, *, result=None, overrides=None):
