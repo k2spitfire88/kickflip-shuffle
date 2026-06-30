@@ -8,9 +8,14 @@ Stencil One) can be registered and re-pointed later without touching widgets.
 """
 from pathlib import Path
 
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QFontDatabase
 
 ASSETS = Path(__file__).resolve().parents[2] / "assets"
+
+# Bundled OFL/Apache fonts (registered at startup; system fallback if unavailable,
+# e.g. under the offscreen test platform which cannot register app fonts).
+FONT_FILES = ("SpaceGrotesk.ttf", "IBMPlexMono-Regular.ttf",
+              "SpecialElite-Regular.ttf", "SairaStencilOne-Regular.ttf")
 
 
 def asset_path(*parts):
@@ -51,9 +56,27 @@ def font_role(name, size=13, *, bold=False):
     return f
 
 
-def _build_qss(p):
+def register_fonts():
+    """Register the bundled fonts with Qt. Returns the loaded family names
+    (empty under platforms that cannot register app fonts, e.g. offscreen)."""
+    loaded = []
+    for fn in FONT_FILES:
+        path = asset_path("fonts", fn)
+        if path.exists():
+            fid = QFontDatabase.addApplicationFont(str(path))
+            if fid != -1:
+                loaded.extend(QFontDatabase.applicationFontFamilies(fid))
+    return loaded
+
+
+def _build_qss(p, grit=None):
+    grit_rule = ""
+    if grit and grit.exists():
+        grit_rule = (f'QWidget#generateRoot {{ background-image: '
+                     f'url("{grit.as_posix()}"); background-repeat: repeat; }}')
     return f"""
     QWidget {{ background: {p['bg']}; color: {p['fg']}; }}
+    {grit_rule}
     QFrame#panel, QListWidget {{ background: {p['panel']};
         border: 1px solid {p['line']}; border-radius: 8px; }}
     QLabel#title {{ color: {p['accent']}; font-weight: 700; }}
@@ -74,8 +97,9 @@ def _build_qss(p):
 
 
 def apply(app, mode="dark"):
-    """Apply the theme stylesheet to the QApplication; return the QSS string."""
-    qss = _build_qss(PALETTE.get(mode, DARK))
+    """Register fonts and apply the theme stylesheet; return the QSS string."""
+    register_fonts()
+    qss = _build_qss(PALETTE.get(mode, DARK), grit=asset_path("textures", "grit.png"))
     app.setStyleSheet(qss)
     app.setFont(font_role("ui"))
     return qss

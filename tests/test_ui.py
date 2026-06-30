@@ -93,6 +93,7 @@ def test_play_and_stop(qtbot, monkeypatch):
     v = _view(qtbot)
     v.profiles.setCurrentRow(0)
     v.play_btn.click()
+    qtbot.waitUntil(lambda: "play" in fp.calls, timeout=3000)   # render is async
     assert "load" in fp.calls and "play" in fp.calls
     v.stop_btn.click()
     assert "stop" in fp.calls
@@ -113,6 +114,21 @@ def test_theme_applies(qapp):
     qss = theme.apply(qapp)
     assert qss.strip()
     assert theme.asset_path("art", "keyart.png").exists()
+
+
+def test_close_is_safe(qtbot):
+    v = _view(qtbot)
+    v.profiles.setCurrentRow(0)
+    v.close()                                  # no active render thread -> no crash
+
+
+def test_register_fonts_and_assets(qapp):
+    fams = theme.register_fonts()        # offscreen returns [] but must not crash
+    assert isinstance(fams, list)
+    for fn in theme.FONT_FILES:
+        assert theme.asset_path("fonts", fn).exists()
+    assert theme.asset_path("textures", "grit.png").exists()
+    assert theme.asset_path("wordmark.png").exists()
 
 
 def test_main_window_builds(qtbot):
@@ -144,5 +160,5 @@ def test_play_error_is_surfaced_not_raised(qtbot, monkeypatch):
                         lambda *a, **k: (_ for _ in ()).throw(RuntimeError("no sf2")))
     msgs = []
     v.status.connect(msgs.append)
-    v.play_btn.click()                         # must not raise
-    assert any("unavailable" in m for m in msgs)
+    v.play_btn.click()                         # must not raise (render is async)
+    qtbot.waitUntil(lambda: any("unavailable" in m for m in msgs), timeout=3000)

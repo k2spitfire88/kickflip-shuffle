@@ -4,7 +4,7 @@ The view is the renderer; `Controller` (and the engine behind it) is the single
 source of truth. Every spec mutation goes through the controller; programmatic
 widget updates are wrapped in blockSignals so they don't re-enter handlers.
 """
-from PySide6.QtCore import Qt, Signal, QSize
+from PySide6.QtCore import Qt, Signal, QSize, QThread, QObject
 from PySide6.QtGui import QColor, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout, QLabel, QListWidget, QListWidgetItem,
@@ -40,12 +40,31 @@ class AxisFingerprint(QWidget):
         p.end()
 
 
+class _RenderWorker(QObject):
+    """Runs the (potentially slow) fluidsynth render off the UI thread."""
+    done = Signal()
+    failed = Signal(str)
+
+    def __init__(self, controller):
+        super().__init__()
+        self._c = controller
+
+    def run(self):
+        try:
+            self._c.render_preview()
+            self.done.emit()
+        except Exception as exc:                 # noqa: BLE001 - surfaced to UI
+            self.failed.emit(str(exc))
+
+
 class GenerateView(QWidget):
     status = Signal(str)
 
     def __init__(self, controller, parent=None):
         super().__init__(parent)
         self._c = controller
+        self._thread = None
+        self._worker = None
         self._build_ui()
         self._populate_profiles()
         self._populate_output_maps()
@@ -53,6 +72,7 @@ class GenerateView(QWidget):
 
     # ------------------------------------------------------------------ UI
     def _build_ui(self):
+        self.setObjectName("generateRoot")      # grit background target (theme QSS)
         root = QHBoxLayout(self)
 
         self.profiles = QListWidget()
@@ -63,9 +83,14 @@ class GenerateView(QWidget):
         right = QVBoxLayout()
         root.addLayout(right, 1)
 
-        title = QLabel("Generate")
-        title.setObjectName("title")
-        title.setFont(theme.font_role("display", 20))
+        title = QLabel()
+        wordmark = QPixmap(str(theme.asset_path("wordmark.png")))
+        if not wordmark.isNull():
+            title.setPixmap(wordmark.scaledToHeight(44, Qt.SmoothTransformation))
+        else:
+            title.setText("Generate")
+            title.setObjectName("title")
+            title.setFont(theme.font_role("display", 20))
         right.addWidget(title)
 
         controls = QHBoxLayout()
@@ -174,13 +199,51 @@ class GenerateView(QWidget):
         self.status.emit("Regenerated.")
 
     def _on_play(self):
+        if self._thread is not None:                   # a render is already running
+            return
+        # Disable ALL mutating controls for the render duration: the worker thread
+        # reads/writes controller spec/seed/buffer, so a concurrent Regenerate/BPM/
+        # Export would race it (render against a half-swapped spec / clobbered buffer).
+        self._set_controls_enabled(False)
+        self.status.emit("Rendering preview…")
+        self._thread = QThread(self)
+        self._worker = _RenderWorker(self._c)
+        self._worker.moveToThread(self._thread)
+        self._thread.started.connect(self._worker.run)
+        self._worker.done.connect(self._on_render_done)
+        self._worker.failed.connect(self._on_render_failed)
+        self._thread.start()
+
+    def _finish_thread(self):
+        if self._thread is not None:
+            self._thread.quit()
+            self._thread.wait()
+            self._worker.deleteLater()
+            self._thread.deleteLater()
+            self._thread = None
+            self._worker = None
+        self._set_controls_enabled(True)
+        self._refresh_seed_label()
+
+    def closeEvent(self, event):
+        # Don't let the view be destroyed with a render thread still running
+        # ("QThread: Destroyed while thread is still running").
+        if self._thread is not None:
+            self._thread.quit()
+            self._thread.wait()
+        super().closeEvent(event)
+
+    def _on_render_done(self):
+        self._finish_thread()
         try:
-            self._c.render_preview()
-            self._c.play()
+            self._c.play()                             # transport is non-blocking
             self.status.emit("Playing preview (General MIDI).")
         except Exception as exc:                       # noqa: BLE001 - surface to UI
             self.status.emit(f"Playback unavailable: {exc}")
-        self._refresh_seed_label()
+
+    def _on_render_failed(self, message):
+        self._finish_thread()
+        self.status.emit(f"Playback unavailable: {message}")
 
     def _on_stop(self):
         self._c.stop()

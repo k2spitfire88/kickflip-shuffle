@@ -6,9 +6,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Kickflip Shuffle** — a planned self-contained macOS `.app` that wraps an existing Python pop-punk drum **MIDI** engine in a native PySide6 GUI. The app builds/auditions the drum *pattern*; the user's DAW/sampler (EZ Drummer 3 etc.) makes the final *sound*. Output is always a `.mid` dragged onto a DAW track.
 
-**As of now: planning + branding are complete; no application code exists.** The only real code is `engine/` (reused unchanged). `app/`, `main.py`, `setup.py`, and tests are *not written yet*. Before building, read `docs/HANDOFF.md` then `docs/BUILD_PLAN.md` — they hold the locked decisions and the phased plan that drive everything.
+**As of 2026-06-30: Phases 0–5a-i are done and pushed** (git repo on GitHub `k2spitfire88/kickflip-shuffle`, branch `main`). Built so far:
+- `engine/` — reused + extended (output maps, per-section axes, `resolved_bar`, list helpers, note-ladder).
+- `app/controller.py` — stateful `Controller` (the UI-facing API).
+- `app/analyze.py` — librosa audio → editable `AnalysisResult` → spec (F2).
+- `app/playback.py` — pyfluidsynth offline render + `sounddevice` transport + context mix (F4).
+- `app/ui/` — PySide6 shell + Generate-view **core** vertical slice (`main.py`, `theme.py`, `generate_view.py`, `main_window.py`).
+- Tests: pytest suite (engine golden, controller, analyze, playback, UI under `QT_QPA_PLATFORM=offscreen`).
 
-Not a git repo yet (Phase 0 does `git init`).
+**Still to build:** Phase **5a-ii** (arrangement timeline + per-section editing + 16-step `QPainter` grid), **5b** (drop-audio), **5c** (groove browser), **6** (wire UI→controller + persistence/.ppd + undo), **7** (py2app packaging), **8** (enhancements). `setup.py` not written yet. Read `docs/BUILD_PLAN.md` + the per-phase plans in `docs/plans/` before continuing; locked decisions live there and in `docs/HANDOFF.md`.
+
+**Open follow-up:** `EZ_DRUMMER_3` note values are UNVERIFIED (only `tom_hi` 50→48 diverges from GM); audition `EZ_DRUMMER_3_ladder.mid` (regenerate via `Controller.write_note_ladder(path, output_map="EZ_DRUMMER_3")`) in EZ Drummer 3.
 
 ## Commands
 
@@ -17,24 +25,28 @@ Not a git repo yet (Phase 0 does `git init`).
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt          # mido, librosa, pyfluidsynth, PySide6, py2app, ...
 
-# Run the engine CLI (only runnable entry point today)
+# Run the app (Generate-view vertical slice)
+python main.py
+
+# Run the engine CLI
 python engine/generate.py --list-profiles
 python engine/generate.py --profile pop_punk --tempo 170 --seed 1 --out out.mid
 python engine/generate.py --song spec.json --out out.mid   # spec = JSON song spec
 
-# Once the app lands (Phase 1/5): python main.py
+# Tests (UI tests need offscreen Qt)
+QT_QPA_PLATFORM=offscreen PYTHONPATH=. .venv/bin/python -m pytest -q
 ```
 
-`libfluidsynth` is a native dependency for playback (`brew install fluid-synth`); the GM soundfont (`FluidR3_GM.sf2`) is downloaded separately into `assets/soundfonts/` (gitignored, ~140MB). Neither is needed to run the engine CLI.
+**Env note:** `.venv` is built on Homebrew `python@3.11` (NOT pyenv) — pyenv's build lacked `_lzma`, which breaks librosa. `libfluidsynth` is a native playback dep (`brew install fluid-synth`, installed). The GM soundfont `FluidR3_GM.sf2` (MIT, ~142MB) lives in `assets/soundfonts/` (gitignored); needed for playback only, not the engine CLI. The four bundled fonts (`assets/fonts/`, OFL/Apache, licenses included) are registered at startup but only under the real Qt platform (offscreen can't register app fonts → system fallback in tests).
 
-No test suite exists yet — Phase 1 adds the first one (golden spec → deterministic events; `GENERAL_MIDI` output must stay byte-identical to current engine output as a regression guard).
+The pytest suite covers engine golden (byte-identical `GENERAL_MIDI` regression guard), controller, analyze, playback, and UI.
 
 ## Architecture
 
 Two layers, strictly separated:
 
 - **`engine/` — the source of truth. Reuse, do not rewrite.** All musical data and generation logic lives here. The app layer calls into it; never port music logic up into the app. `engine/__init__.py` re-exports the public API.
-- **`app/` (to be built) — controller + UI only.** In-process Python calls into the engine (no JS↔Python bridge). Planned: `controller.py` (UI-facing API), `analyze.py` (librosa audio→spec, F2), `playback.py` (pyfluidsynth render/transport, F4), `ui/` (PySide6 widgets).
+- **`app/` — controller + UI only.** In-process Python calls into the engine (no JS↔Python bridge). `controller.py` (UI-facing API — the only thing the UI talks to), `analyze.py` (librosa audio→spec, F2), `playback.py` (pyfluidsynth render/transport + context mix, F4), `ui/` (PySide6 widgets; the UI drives the controller, never the engine/playback directly).
 
 ### Engine API (`engine/generate.py`)
 
