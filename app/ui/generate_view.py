@@ -245,12 +245,15 @@ class GenerateView(QWidget):
         self._set_controls_enabled(True)
         self._refresh_seed_label()
 
-    def closeEvent(self, event):
-        # Don't let the view be destroyed with a render thread still running
-        # ("QThread: Destroyed while thread is still running").
+    def shutdown(self):
+        """Quit/wait any running render thread. Called by MainWindow.closeEvent
+        (a child widget's closeEvent does NOT fire inside a QStackedWidget)."""
         if self._thread is not None:
             self._thread.quit()
             self._thread.wait()
+
+    def closeEvent(self, event):
+        self.shutdown()
         super().closeEvent(event)
 
     def _on_render_done(self):
@@ -294,6 +297,24 @@ class GenerateView(QWidget):
         self.timeline.refresh()
         self.timeline.list.setCurrentRow(0)
         self._select_section(0)
+
+    def load_current_spec(self):
+        """Load an externally-set current spec (e.g. built from Drop analysis).
+
+        Selects the matching profile row WITHOUT firing _on_profile_selected
+        (which would call song_from_profile and discard the analysed sections),
+        then refreshes the editor from controller.spec.
+        """
+        spec = self._c.spec
+        if spec is None:
+            return
+        self.profiles.blockSignals(True)
+        for i in range(self.profiles.count()):
+            if self.profiles.item(i).data(Qt.UserRole) == spec.get("profile"):
+                self.profiles.setCurrentRow(i)
+                break
+        self.profiles.blockSignals(False)
+        self._refresh_from_spec()
 
     def _select_section(self, index):
         self.section_editor.load(index)
