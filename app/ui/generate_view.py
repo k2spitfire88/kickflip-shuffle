@@ -63,9 +63,12 @@ class GenerateView(QWidget):
     # / no selection. The groove browser uses it to enable/disable apply buttons.
     sectionSelectionChanged = Signal(object)
 
-    def __init__(self, controller, parent=None):
+    def __init__(self, controller, parent=None, prefs=None):
         super().__init__(parent)
         self._c = controller
+        from .settings import Prefs
+        self._prefs = prefs or Prefs()
+        self._last_export = None            # last written .mid path (for Reveal)
         self._thread = None
         self._worker = None
         self._build_ui()
@@ -126,10 +129,16 @@ class GenerateView(QWidget):
         self.stop_btn.clicked.connect(self._on_stop)
         self.export_btn = QPushButton("Export .mid")
         self.export_btn.clicked.connect(self._on_export)
+        self.export_as_btn = QPushButton("Export As…")
+        self.export_as_btn.clicked.connect(self._on_export_as)
+        self.reveal_btn = QPushButton("Reveal")
+        self.reveal_btn.clicked.connect(self._on_reveal)
         transport.addWidget(self.play_btn)
         transport.addWidget(self.stop_btn)
         transport.addStretch(1)
         transport.addWidget(self.export_btn)
+        transport.addWidget(self.export_as_btn)
+        transport.addWidget(self.reveal_btn)
         right.addLayout(transport)
 
         # Arrangement editor (timeline + per-section editor + step grid), shown
@@ -276,19 +285,59 @@ class GenerateView(QWidget):
         self.status.emit("Stopped.")
 
     def _on_export(self):
+        """Export straight to the default folder with a de-duped filename."""
+        target = self._dedup_path(self._prefs.export_dir() / "drums.mid")
+        self._do_export(str(target))
+
+    def _on_export_as(self):
+        start = str(self._prefs.export_dir() / "drums.mid")
         path, _filter = QFileDialog.getSaveFileName(
-            self, "Export MIDI", "drums.mid", "MIDI (*.mid)")
-        if not path:
-            return
+            self, "Export MIDI", start, "MIDI (*.mid)")
+        if path:
+            self._do_export(path)
+
+    def _do_export(self, path):
         try:
             out = self._c.export(path)
+            self._last_export = str(out)
             self.status.emit(f"Exported {out}")
         except Exception as exc:                       # noqa: BLE001 - surface to UI
             self.status.emit(f"Export failed: {exc}")
         self._refresh_seed_label()
 
+    def _on_reveal(self):
+        # Reveal stays enabled without a spec on purpose — opening the output
+        # folder is useful any time, unlike the spec-dependent transport buttons.
+        import sys
+        import subprocess
+        from pathlib import Path
+        if self._last_export:
+            target, folder = self._last_export, str(Path(self._last_export).parent)
+        else:
+            target = folder = str(self._prefs.export_dir())
+        if sys.platform != "darwin":
+            self.status.emit(f"Output folder: {folder}")
+            return
+        cmd = ["open", "-R", target] if self._last_export else ["open", target]
+        subprocess.Popen(cmd)
+        self.status.emit(f"Revealed {target}")
+
+    @staticmethod
+    def _dedup_path(path):
+        """Return `path`, or `<stem>-N<suffix>` at the first free N (no clobber)."""
+        from pathlib import Path
+        path = Path(path)
+        if not path.exists():
+            return path
+        n = 2
+        while True:
+            cand = path.with_name(f"{path.stem}-{n}{path.suffix}")
+            if not cand.exists():
+                return cand
+            n += 1
+
     # ------------------------------------------------------------- helpers
-    def _refresh_from_spec(self):
+    def _refresh_from_spec(self, selected_section=0):
         spec = self._c.spec
         self.bpm.blockSignals(True)
         self.bpm.setValue(int(round(spec["tempo"])))
@@ -298,15 +347,21 @@ class GenerateView(QWidget):
         self.empty_hint.setVisible(False)
         self.editor_panel.setVisible(True)
         self.timeline.refresh()
-        self.timeline.list.setCurrentRow(0)
-        self._select_section(0)
+        n = len(spec.get("sections", []))
+        if n:
+            row = max(0, min(int(selected_section or 0), n - 1))   # clamp saved index
+            self.timeline.list.setCurrentRow(row)
+            self._select_section(row)
+        else:
+            self.sectionSelectionChanged.emit(None)
 
-    def load_current_spec(self):
-        """Load an externally-set current spec (e.g. built from Drop analysis).
+    def load_current_spec(self, selected_section=0):
+        """Load an externally-set current spec (e.g. built from Drop analysis or a
+        loaded .ppd), restoring `selected_section` (clamped to the live range).
 
         Selects the matching profile row WITHOUT firing _on_profile_selected
-        (which would call song_from_profile and discard the analysed sections),
-        then refreshes the editor from controller.spec.
+        (which would call song_from_profile and discard the loaded sections), then
+        refreshes the editor from controller.spec.
         """
         spec = self._c.spec
         if spec is None:
@@ -317,7 +372,7 @@ class GenerateView(QWidget):
                 self.profiles.setCurrentRow(i)
                 break
         self.profiles.blockSignals(False)
-        self._refresh_from_spec()
+        self._refresh_from_spec(selected_section)
 
     def _select_section(self, index):
         self.section_editor.load(index)
@@ -376,5 +431,5 @@ class GenerateView(QWidget):
 
     def _set_controls_enabled(self, on):
         for w in (self.bpm, self.map_combo, self.regen_btn, self.play_btn,
-                  self.stop_btn, self.export_btn):
+                  self.stop_btn, self.export_btn, self.export_as_btn):
             w.setEnabled(on)

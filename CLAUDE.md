@@ -6,15 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Kickflip Shuffle** — a planned self-contained macOS `.app` that wraps an existing Python pop-punk drum **MIDI** engine in a native PySide6 GUI. The app builds/auditions the drum *pattern*; the user's DAW/sampler (EZ Drummer 3 etc.) makes the final *sound*. Output is always a `.mid` dragged onto a DAW track.
 
-**As of 2026-06-30: Phases 0–5a-i are done and pushed** (git repo on GitHub `k2spitfire88/kickflip-shuffle`, branch `main`). Built so far:
-- `engine/` — reused + extended (output maps, per-section axes, `resolved_bar`, list helpers, note-ladder).
+**As of 2026-07-03: Phases 0–5c are done and pushed** (git repo on GitHub `k2spitfire88/kickflip-shuffle`, branch `main`). Built so far:
+- `engine/` — reused + extended (output maps, per-section axes, `resolved_bar`, list helpers, note-ladder, `groove_usage`).
 - `app/controller.py` — stateful `Controller` (the UI-facing API).
 - `app/analyze.py` — librosa audio → editable `AnalysisResult` → spec (F2).
 - `app/playback.py` — pyfluidsynth offline render + `sounddevice` transport + context mix (F4).
-- `app/ui/` — PySide6 shell + Generate-view **core** vertical slice (`main.py`, `theme.py`, `generate_view.py`, `main_window.py`).
-- Tests: pytest suite (engine golden, controller, analyze, playback, UI under `QT_QPA_PLATFORM=offscreen`).
+- `app/ui/` — PySide6 shell + full Generate view (arrangement timeline + per-section editor + 16-step `QPainter` grid), Drop-audio view, and Groove browser (`main.py`, `theme.py`, `generate_view.py`, `editor_widgets.py`, `drop_view.py`, `browser_view.py`, `main_window.py`).
+- Tests: pytest suite (128 — engine golden, controller, analyze, playback, UI + browser under `QT_QPA_PLATFORM=offscreen`).
 
-**Still to build:** Phase **5a-ii** (arrangement timeline + per-section editing + 16-step `QPainter` grid), **5b** (drop-audio), **5c** (groove browser), **6** (wire UI→controller + persistence/.ppd + undo), **7** (py2app packaging), **8** (enhancements). `setup.py` not written yet. Read `docs/BUILD_PLAN.md` + the per-phase plans in `docs/plans/` before continuing; locked decisions live there and in `docs/HANDOFF.md`.
+**Still to build:** Phase **6** (wire UI→controller + persistence/.ppd + undo), **7** (py2app packaging), **8** (enhancements). `setup.py` not written yet. Read `docs/BUILD_PLAN.md` + the per-phase plans in `docs/plans/` before continuing; locked decisions live there and in `docs/HANDOFF.md`.
 
 **Open follow-up:** `EZ_DRUMMER_3` note values are UNVERIFIED (only `tom_hi` 50→48 diverges from GM); audition `EZ_DRUMMER_3_ladder.mid` (regenerate via `Controller.write_note_ladder(path, output_map="EZ_DRUMMER_3")`) in EZ Drummer 3.
 

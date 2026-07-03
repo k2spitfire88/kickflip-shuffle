@@ -14,8 +14,12 @@ def main():
     from app.ui.main_window import MainWindow
 
     app = QApplication.instance() or QApplication(sys.argv)
-    theme.apply(app, mode="dark")
-    window = MainWindow()
+    app.setOrganizationName("Kickflip Shuffle")
+    app.setApplicationName("Kickflip Shuffle")
+    from app.ui.settings import Prefs
+    prefs = Prefs()
+    theme.apply(app, mode=prefs.theme())
+    window = MainWindow(prefs=prefs)
     window.show()
     return app.exec()
 

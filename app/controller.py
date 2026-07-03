@@ -27,10 +27,13 @@ Engine invariants honoured here
   * ``seed`` is the only source of randomness — plumbed through every call.
 """
 import copy
+import json
 import random
 
 import engine
 from . import analyze
+
+PROJECT_VERSION = 1
 
 # Upper bound for an auto-drawn seed. 2**63 keeps it a positive 64-bit int,
 # comfortably within Python's arbitrary-precision range and JSON-serialisable
@@ -82,6 +85,12 @@ class Controller:
         self._seed = random.randrange(_SEED_BOUND)
         self._invalidate_preview()
         return self._seed
+
+    def clear_spec(self):
+        """Drop the held arrangement (File → New). Public so the UI never pokes
+        `_spec` directly."""
+        self._spec = None
+        self._invalidate_preview()
 
     def _invalidate_preview(self):
         """Drop the held preview buffer so the next play() re-renders. Called on
@@ -328,6 +337,62 @@ class Controller:
         ppq = spec.get("ppq", 480)
         events = engine.build_song(spec, seed=s, output_map=omap)
         return engine.write_midi(events, out_path, tempo=tempo, ppq=ppq)
+
+    # ------------------------------------------------------------------
+    # Persistence (.ppd = JSON song spec + seed/output_map + UI extras)
+    # ------------------------------------------------------------------
+    def to_project(self, extra=None):
+        """Serialisable project dict. `extra` carries UI-only state
+        (selected_section, theme). Raises if there is no spec to save."""
+        if self._spec is None:
+            raise ValueError("no spec to save; build/generate a spec first")
+        data = {
+            "version": PROJECT_VERSION,
+            "spec": copy.deepcopy(self._spec),
+            "seed": self._seed,
+            "output_map": self._output_map,
+        }
+        if extra:
+            data.update(extra)
+        return data
+
+    def save_project(self, path, *, extra=None):
+        """Write the current project to `path` as JSON. Returns the path."""
+        with open(path, "w") as f:
+            json.dump(self.to_project(extra), f, indent=2)
+        return path
+
+    def load_project(self, path):
+        """Load a `.ppd`, replacing held spec/seed/output_map. Validates BEFORE
+        mutating any state: a bad version or non-dict spec raises `ValueError`
+        with `self._spec` untouched. An unknown/missing output_map does NOT raise
+        — it falls back to GENERAL_MIDI and is reported in the returned
+        ``warnings`` list. Returns the full dict so the UI can restore
+        selected_section/theme and surface warnings."""
+        with open(path) as f:
+            data = json.load(f)
+        if data.get("version") != PROJECT_VERSION:
+            raise ValueError(
+                f"unsupported project version {data.get('version')!r} "
+                f"(expected {PROJECT_VERSION})")
+        spec = data.get("spec")
+        if not isinstance(spec, dict):
+            raise ValueError("project file has no valid 'spec'")
+        warnings = []
+        omap = data.get("output_map", DEFAULT_OUTPUT_MAP)
+        try:
+            engine.get_output_map(omap)
+        except Exception:                              # noqa: BLE001 - unknown map
+            warnings.append(
+                f"output map {omap!r} not found; using {DEFAULT_OUTPUT_MAP}.")
+            omap = DEFAULT_OUTPUT_MAP
+        # All validated — now mutate.
+        self._spec = copy.deepcopy(spec)
+        seed = data.get("seed")
+        self._seed = int(seed) if seed is not None else None
+        self._output_map = omap
+        self._invalidate_preview()
+        return {**data, "output_map": omap, "warnings": warnings}
 
     def write_note_ladder(self, out_path, *, output_map=None):
         """Emit a one-hit-per-role ladder ``.mid`` for auditing an output map's

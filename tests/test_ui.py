@@ -105,7 +105,7 @@ def test_export_writes_midi(qtbot, monkeypatch, tmp_path):
                         lambda *a, **k: (out, "MIDI (*.mid)"))
     v = _view(qtbot)
     v.profiles.setCurrentRow(0)
-    v.export_btn.click()
+    v.export_as_btn.click()                    # Save-As path (getSaveFileName)
     assert (tmp_path / "out.mid").exists()
     mido.MidiFile(out)                         # re-readable
 
@@ -134,7 +134,7 @@ def test_register_fonts_and_assets(qapp):
 def test_main_window_builds(qtbot):
     w = MainWindow(Controller())
     qtbot.addWidget(w)
-    assert w.windowTitle() == "Kickflip Shuffle"
+    assert w.windowTitle() == "Kickflip Shuffle — Untitled"
     assert isinstance(w.view, GenerateView)        # .view -> generate_view
     assert w.stack.count() == 3                     # Generate + Drop + Browser
     assert w.statusBar() is not None
