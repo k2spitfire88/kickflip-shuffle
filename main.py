@@ -9,6 +9,8 @@ import sys
 
 
 def main():
+    from app._bootstrap import bootstrap
+    bootstrap()                                   # frozen dylib fixups — must be first
     from PySide6.QtWidgets import QApplication
     from app.ui import theme
     from app.ui.main_window import MainWindow
