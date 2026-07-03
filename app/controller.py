@@ -55,6 +55,8 @@ class Controller:
         self._preview_buf = None
         self._preview_sr = None
         self._player = None
+        self._undo = []
+        self._redo = []
 
     # ------------------------------------------------------------------
     # Held state (read accessors the UI renders from)
@@ -90,7 +92,63 @@ class Controller:
         """Drop the held arrangement (File → New). Public so the UI never pokes
         `_spec` directly."""
         self._spec = None
+        self._reset_history()
         self._invalidate_preview()
+
+    # ------------------------------------------------------------------
+    # Undo/redo — deep-copied spec snapshots (arrangement editor)
+    # ------------------------------------------------------------------
+    _HISTORY_CAP = 100
+
+    def _snapshot(self):
+        """Push the current spec onto the undo stack (pre-edit state) and drop the
+        redo stack. Called by the tracked mutators before they change the spec."""
+        if self._spec is None:
+            return
+        self._undo.append(copy.deepcopy(self._spec))
+        if len(self._undo) > self._HISTORY_CAP:
+            self._undo.pop(0)
+        self._redo.clear()
+
+    def _reset_history(self):
+        """Clear undo/redo — called when a new document replaces the spec wholesale
+        (profile pick, fresh build, project load, analysis build)."""
+        self._undo.clear()
+        self._redo.clear()
+
+    def can_undo(self):
+        return bool(self._undo)
+
+    def can_redo(self):
+        return bool(self._redo)
+
+    def undo(self):
+        if not self._undo:
+            return False
+        self._redo.append(copy.deepcopy(self._spec))
+        self._spec = self._undo.pop()
+        self._invalidate_preview()
+        return True
+
+    def redo(self):
+        if not self._redo:
+            return False
+        self._undo.append(copy.deepcopy(self._spec))
+        self._spec = self._redo.pop()
+        self._invalidate_preview()
+        return True
+
+    def set_tempo(self, value):
+        """Set the spec tempo in place (tracked). No-op — and no snapshot — when the
+        value is unchanged, so a spin-box drag doesn't bloat the undo stack."""
+        spec = self._require_spec()
+        fv = float(value)
+        if fv == spec.get("tempo"):
+            return spec
+        self._snapshot()
+        spec["tempo"] = fv
+        self._invalidate_preview()
+        return spec
 
     def _invalidate_preview(self):
         """Drop the held preview buffer so the next play() re-renders. Called on
@@ -182,6 +240,7 @@ class Controller:
     def song_from_profile(self, profile_name, overrides=None):
         """Build a default-arrangement spec for a profile; store as current."""
         self._spec = engine.song_from_profile(profile_name, overrides)
+        self._reset_history()
         return self._spec
 
     def build_spec_from_ui_state(self, profile, *, axes=None, sections=None,
@@ -214,6 +273,7 @@ class Controller:
             "overrides": overrides,
             "sections": sections,
         }
+        self._reset_history()
         return self._spec
 
     # ------------------------------------------------------------------
@@ -262,6 +322,7 @@ class Controller:
         """Store an edited grid pattern for (section, bar). Bar key is int."""
         engine._validate_pattern(rows)
         sec = self._require_spec()["sections"][section_index]
+        self._snapshot()
         sec.setdefault("patterns", {})[int(bar_index)] = copy.deepcopy(rows)
         self._invalidate_preview()
         return self._spec
@@ -271,6 +332,7 @@ class Controller:
         sec = self._require_spec()["sections"][section_index]
         patterns = sec.get("patterns")
         if patterns:
+            self._snapshot()               # only snapshot when actually clearing
             patterns.pop(int(bar_index), None)
             patterns.pop(str(bar_index), None)
             if not patterns:
@@ -294,6 +356,7 @@ class Controller:
         references — preserves each section's `patterns`/unknown keys. Globals
         (profile/overrides/tempo/ppq) untouched."""
         spec = self._require_spec()
+        self._snapshot()
         for sec in sections:
             self._prune_patterns(sec)
         spec["sections"] = list(sections)
@@ -305,6 +368,8 @@ class Controller:
         EXISTING section dict (so `patterns` survive). Prunes out-of-range
         overrides if `bars` shrank."""
         sec = self._require_spec()["sections"][index]
+        if fields:
+            self._snapshot()               # empty call changes nothing -> no snapshot
         for key, value in fields.items():
             if value is None:               # None -> unset (e.g. groove "from role")
                 sec.pop(key, None)
@@ -391,6 +456,7 @@ class Controller:
         seed = data.get("seed")
         self._seed = int(seed) if seed is not None else None
         self._output_map = omap
+        self._reset_history()
         self._invalidate_preview()
         return {**data, "output_map": omap, "warnings": warnings}
 
@@ -424,6 +490,7 @@ class Controller:
         if result is None:
             raise ValueError("no analysis; call analyze_audio or pass result=")
         self._spec = analyze.spec_from_analysis(result, profile, overrides=overrides)
+        self._reset_history()
         return self._spec
 
     # ------------------------------------------------------------------

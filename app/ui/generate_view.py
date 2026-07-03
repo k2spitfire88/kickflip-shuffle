@@ -62,6 +62,9 @@ class GenerateView(QWidget):
     # Emits the arrangement-editor's selected section index, or None when no spec
     # / no selection. The groove browser uses it to enable/disable apply buttons.
     sectionSelectionChanged = Signal(object)
+    # Any arrangement edit (section/timeline/grid/bpm) — MainWindow refreshes the
+    # Undo/Redo enable-state on this.
+    arrangementChanged = Signal()
 
     def __init__(self, controller, parent=None, prefs=None):
         super().__init__(parent)
@@ -158,6 +161,7 @@ class GenerateView(QWidget):
         self.timeline.sectionSelected.connect(self._select_section)
         self.timeline.sectionsChanged.connect(self._on_sections_changed)
         self.section_editor.changed.connect(self._on_section_edited)
+        self.grid.edited.connect(self._on_grid_edited)
         right.addWidget(self.editor_panel, 1)
         self.editor_panel.setVisible(False)
 
@@ -209,13 +213,12 @@ class GenerateView(QWidget):
         self._refresh_from_spec()
 
     def _on_bpm_changed(self, value):
-        spec = self._c.spec
-        if spec is None:
+        if self._c.spec is None:
             return
-        # Preserve sections/overrides — do NOT rebuild the arrangement.
-        self._c.build_spec_from_ui_state(
-            spec["profile"], axes=spec["overrides"], sections=spec["sections"],
-            tempo=value, ppq=spec.get("ppq", 480))
+        # Tracked in-place tempo edit (undoable); no full-spec rebuild, so it does
+        # not reset undo history.
+        self._c.set_tempo(value)
+        self.arrangementChanged.emit()
 
     def _on_map_changed(self, _index):
         name = self.map_combo.currentData()
@@ -401,6 +404,7 @@ class GenerateView(QWidget):
         self._c.update_section(idx, groove=name, role=None)
         self.timeline.refresh()
         self._select_section(idx)
+        self.arrangementChanged.emit()          # undoable edit -> refresh undo state
         self.status.emit(f"Section {idx + 1} groove -> {name}.")
         return True
 
@@ -413,17 +417,23 @@ class GenerateView(QWidget):
         self._c.update_section(idx, fill=name)
         self.timeline.refresh()
         self._select_section(idx)
+        self.arrangementChanged.emit()          # undoable edit -> refresh undo state
         self.status.emit(f"Section {idx + 1} fill -> {name}.")
         return True
 
     def _on_sections_changed(self):
         self._refresh_seed_label()           # spec mutated; seed/preview unaffected here
+        self.arrangementChanged.emit()
 
     def _on_section_edited(self):
         # role/bars label + groove/bars may change the resolved grid -> refresh both.
         self.timeline.refresh()
         if self.section_editor._i is not None:
             self.grid.load(self.section_editor._i)
+        self.arrangementChanged.emit()
+
+    def _on_grid_edited(self):
+        self.arrangementChanged.emit()
 
     def _refresh_seed_label(self):
         s = self._c.seed

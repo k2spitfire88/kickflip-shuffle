@@ -89,6 +89,15 @@ class MainWindow(QMainWindow):
         self._add_action(file_menu, "Save As…", self._save_as,
                          QKeySequence.SaveAs)
 
+        edit_menu = self.menuBar().addMenu("Edit")
+        self._undo_act = self._add_action(edit_menu, "Undo", self._undo,
+                                          QKeySequence.Undo)
+        self._redo_act = self._add_action(edit_menu, "Redo", self._redo,
+                                          QKeySequence.Redo)
+        edit_menu.aboutToShow.connect(self._refresh_undo_actions)
+        self.generate_view.arrangementChanged.connect(self._refresh_undo_actions)
+        self._refresh_undo_actions()
+
         view_menu = self.menuBar().addMenu("View")
         self._theme_group = QActionGroup(self)
         for mode in ("dark", "light"):
@@ -121,6 +130,24 @@ class MainWindow(QMainWindow):
             act.triggered.connect(lambda _c, p=path: self._open(p))
             self._recent_menu.addAction(act)
 
+    # ------------------------------------------------------- undo / redo
+    def _refresh_undo_actions(self):
+        self._undo_act.setEnabled(self._c.can_undo())
+        self._redo_act.setEnabled(self._c.can_redo())
+
+    def _undo(self):
+        if self._c.undo():
+            self._resync_after_history()
+
+    def _redo(self):
+        if self._c.redo():
+            self._resync_after_history()
+
+    def _resync_after_history(self):
+        self.generate_view.load_current_spec(
+            self.generate_view.current_section_index() or 0)
+        self._refresh_undo_actions()
+
     # ----------------------------------------------------- project actions
     def _new(self):
         self._c.clear_spec()                       # drop held arrangement
@@ -129,6 +156,7 @@ class MainWindow(QMainWindow):
         self.generate_view.editor_panel.setVisible(False)
         self.generate_view._set_controls_enabled(False)
         self._set_project_path(None)
+        self._refresh_undo_actions()
         self.statusBar().showMessage("New project — pick a profile to start.")
 
     def _open_dialog(self):
@@ -153,6 +181,7 @@ class MainWindow(QMainWindow):
         self._prefs.set_last_project_dir(Path(path).parent)
         self._rebuild_recent_menu()
         self._set_project_path(path)
+        self._refresh_undo_actions()
         msg = f"Opened {Path(path).name}"
         for w in data.get("warnings", []):
             msg += f"  ·  {w}"
