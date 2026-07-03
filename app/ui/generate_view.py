@@ -136,9 +136,18 @@ class GenerateView(QWidget):
         self.export_as_btn.clicked.connect(self._on_export_as)
         self.reveal_btn = QPushButton("Reveal")
         self.reveal_btn.clicked.connect(self._on_reveal)
+        from .drag import MidiDragButton
+        self.drag_btn = MidiDragButton(
+            "Drag to DAW ⇱",
+            export_fn=lambda path: self._c.export(path),
+            enabled_fn=lambda: self._c.spec is not None,
+            on_status=self.status.emit)
+        self.drag_btn.setToolTip("Drag this onto a DAW/EZ Drummer track to drop the "
+                                 ".mid directly.")
         transport.addWidget(self.play_btn)
         transport.addWidget(self.stop_btn)
         transport.addStretch(1)
+        transport.addWidget(self.drag_btn)
         transport.addWidget(self.export_btn)
         transport.addWidget(self.export_as_btn)
         transport.addWidget(self.reveal_btn)
@@ -441,5 +450,5 @@ class GenerateView(QWidget):
 
     def _set_controls_enabled(self, on):
         for w in (self.bpm, self.map_combo, self.regen_btn, self.play_btn,
-                  self.stop_btn, self.export_btn, self.export_as_btn):
+                  self.stop_btn, self.export_btn, self.export_as_btn, self.drag_btn):
             w.setEnabled(on)

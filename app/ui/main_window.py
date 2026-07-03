@@ -265,6 +265,8 @@ class MainWindow(QMainWindow):
         self.generate_view.shutdown()
         self.drop_view.shutdown()
         self.browser_view.shutdown()
+        from .drag import cleanup_temp_dir
+        cleanup_temp_dir()                         # remove drag-out temp .mid files
         super().closeEvent(event)
 
     def _about(self):
