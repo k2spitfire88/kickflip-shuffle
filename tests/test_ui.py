@@ -136,7 +136,7 @@ def test_main_window_builds(qtbot):
     qtbot.addWidget(w)
     assert w.windowTitle() == "Kickflip Shuffle"
     assert isinstance(w.view, GenerateView)        # .view -> generate_view
-    assert w.stack.count() == 2                     # Generate + Drop
+    assert w.stack.count() == 3                     # Generate + Drop + Browser
     assert w.statusBar() is not None
 
 

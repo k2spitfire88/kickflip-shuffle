@@ -311,8 +311,10 @@ PROFILES = {
     "tre_cool": _p("90s_skate", 180,
                    ["verse_basic", "surf", "skank", "longview_tom", "verse_basic"],
                    ["chorus_ride_bell", "chorus_crash"],
-                   ["halftime", "longview_tom"], ["verse_basic", "ramones_buzzsaw"],
-                   ["marching_toms", "tom_descend", "triplet_snare", "sparse_tom"],
+                   ["halftime", "longview_tom", "half_time_shuffle"],
+                   ["verse_basic", "ramones_buzzsaw"],
+                   ["marching_toms", "tom_descend", "triplet_snare", "sparse_tom",
+                    "halfbar_toms"],
                    ghost=0.6, ornament=0.6, fill_prob=0.85),
     "offspring": _p("90s_skate", 172,
                     ["surf", "skank", "verse_basic", "two_step"],
@@ -335,9 +337,11 @@ PROFILES = {
     # --- 2000s mainstream / mall ---
     "barker": _p("2000s_mall", 168,
                  ["verse_16th", "verse_doubles", "verse_ride", "verse_16th"],
-                 ["chorus_crash", "chorus_open_hat"], ["halftime", "skank"],
+                 ["chorus_crash", "chorus_open_hat"],
+                 ["halftime", "skank", "half_time_shuffle"],
                  ["verse_doubles", "verse_16th"],
-                 ["triplet_snare", "tom_descend", "marching_toms", "snare_buildup"],
+                 ["triplet_snare", "tom_descend", "marching_toms", "snare_buildup",
+                  "halfbar_toms"],
                  ghost=1.0, ornament=1.0, fill_prob=0.95, humanize=0.8),
     "good_charlotte": _p("2000s_mall", 158,
                          ["verse_basic", "four_floor", "verse_basic"],
@@ -779,6 +783,41 @@ def list_fills():
     """[{name, description}] for every FILLS key (description from grooves.md)."""
     _, desc = _parse_doc_descriptions()
     return [{"name": n, "description": desc.get(n)} for n in FILLS]
+
+
+_GROOVE_ROLE_KEYS = ("verse", "chorus", "bridge", "intro")
+
+
+def groove_usage():
+    """Reverse-map every GROOVES + FILLS name to how the profiles use it.
+
+    {name: {"roles": [...], "profiles": [...], "eras": [...]}} where grooves draw
+    roles from the verse/chorus/bridge/intro pools and fills carry role "fill".
+    Names present in no profile pool come back with empty lists (orphans). Used by
+    the UI groove browser for role grouping + the "Used by" badge.
+    """
+    usage = {n: {"roles": set(), "profiles": [], "eras": set()}
+             for n in list(GROOVES) + list(FILLS)}
+    for pname, prof in PROFILES.items():
+        era = prof["era"]
+        for role in _GROOVE_ROLE_KEYS:
+            for gname in prof.get(role, []):
+                u = usage[gname]
+                u["roles"].add(role)
+                u["eras"].add(era)
+                if pname not in u["profiles"]:
+                    u["profiles"].append(pname)
+        for fname in prof.get("fills", []):
+            u = usage[fname]
+            u["roles"].add("fill")
+            u["eras"].add(era)
+            if pname not in u["profiles"]:
+                u["profiles"].append(pname)
+    order = {n: i for i, n in enumerate(_GROOVE_ROLE_KEYS + ("fill",))}
+    return {n: {"roles": sorted(u["roles"], key=lambda r: order[r]),
+                "profiles": u["profiles"],
+                "eras": sorted(u["eras"])}
+            for n, u in usage.items()}
 
 
 def note_ladder_events(output_map=None, ppq=480, vel=100):

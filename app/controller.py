@@ -125,6 +125,48 @@ class Controller:
     def list_output_maps(self):
         return engine.list_output_maps()
 
+    def list_groove_usage(self):
+        """{name: {roles, profiles, eras}} for the groove browser (role grouping
+        + 'Used by' badge). Passthrough to ``engine.groove_usage``."""
+        return engine.groove_usage()
+
+    def preview_groove(self, name, *, kind="groove", bars=2):
+        """Build a THROWAWAY single-section spec to audition one groove/fill.
+
+        Flavored by the current profile + its axes so the preview matches song
+        context. If no spec is held yet, falls back to profile ``pop_punk`` with
+        that profile's default axes. Never mutates ``self._spec`` — returns the
+        spec for the caller to hand to ``render_preview(spec)``.
+
+        ``kind="groove"`` -> a ``bars``-bar section playing ``name``.
+        ``kind="fill"``   -> a 1-bar section ending on fill ``name`` (audition
+        only; the arrangement 'Add as fill' action is separate).
+        """
+        if self._spec is not None:
+            profile = self._spec["profile"]
+            overrides = dict(self._spec.get("overrides") or {})
+            ppq = self._spec.get("ppq", 480)
+            tempo = self._spec.get("tempo") or engine.PROFILES[profile]["tempo"]
+        else:
+            profile = "pop_punk"
+            overrides = {}
+            ppq = 480
+            tempo = engine.PROFILES[profile]["tempo"]
+        if kind == "fill":
+            section = {"groove": "verse_basic", "bars": 1,
+                       "fill": name, "fill_at_end": True}
+        elif kind == "groove":
+            section = {"groove": name, "bars": int(bars)}
+        else:
+            raise ValueError(f"kind must be 'groove' or 'fill', got {kind!r}")
+        return {
+            "ppq": ppq,
+            "profile": profile,
+            "tempo": float(tempo),
+            "overrides": overrides,
+            "sections": [section],
+        }
+
     # ------------------------------------------------------------------
     # Spec construction
     # ------------------------------------------------------------------
@@ -352,6 +394,21 @@ class Controller:
             ppq=spec.get("ppq", 480), sample_rate=sample_rate)
         if with_context and self._context_audio is not None:
             buf = playback.mix(buf, self._context_audio)
+        self._preview_buf, self._preview_sr = buf, sample_rate
+        return buf
+
+    def audition(self, spec, *, seed=0, sample_rate=44100):
+        """Render a THROWAWAY spec into the preview buffer for immediate playback,
+        WITHOUT touching the held spec/seed (groove-browser audition path — unlike
+        `render_preview`, which holds its spec/seed). Uses a fixed local seed so
+        auditions are deterministic and independent of the arrangement's seed.
+        Returns the buffer; play with `play()`."""
+        from . import playback
+        events = engine.build_song(spec, seed=int(seed),
+                                   output_map=engine.GENERAL_MIDI)
+        buf = playback.render_events(
+            events, tempo=spec.get("tempo") or engine.PROFILES[spec["profile"]]["tempo"],
+            ppq=spec.get("ppq", 480), sample_rate=sample_rate)
         self._preview_buf, self._preview_sr = buf, sample_rate
         return buf
 

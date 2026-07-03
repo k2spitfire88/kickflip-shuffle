@@ -59,6 +59,9 @@ class _RenderWorker(QObject):
 
 class GenerateView(QWidget):
     status = Signal(str)
+    # Emits the arrangement-editor's selected section index, or None when no spec
+    # / no selection. The groove browser uses it to enable/disable apply buttons.
+    sectionSelectionChanged = Signal(object)
 
     def __init__(self, controller, parent=None):
         super().__init__(parent)
@@ -319,6 +322,44 @@ class GenerateView(QWidget):
     def _select_section(self, index):
         self.section_editor.load(index)
         self.grid.load(index)
+        self.sectionSelectionChanged.emit(self.current_section_index())
+
+    # --------------------------------------------------- groove-browser API
+    def current_section_index(self):
+        """Arrangement-editor selected section index, or None if no spec / no
+        selection / stale row. Bounds-checked against the live section count."""
+        spec = self._c.spec
+        if spec is None:
+            return None
+        row = self.timeline.list.currentRow()
+        if row < 0 or row >= len(spec.get("sections", [])):
+            return None
+        return row
+
+    def apply_groove_to_current_section(self, name):
+        """Set the current section's groove (browser 'Use in current section').
+        Passes role=None explicitly so a role-based section drops its role key
+        rather than carrying both. No-op (returns False) if no section is live."""
+        idx = self.current_section_index()
+        if idx is None:
+            return False
+        self._c.update_section(idx, groove=name, role=None)
+        self.timeline.refresh()
+        self._select_section(idx)
+        self.status.emit(f"Section {idx + 1} groove -> {name}.")
+        return True
+
+    def apply_fill_to_current_section(self, name):
+        """Set the current section's fill (browser 'Add as fill'). No-op if no
+        section is live."""
+        idx = self.current_section_index()
+        if idx is None:
+            return False
+        self._c.update_section(idx, fill=name)
+        self.timeline.refresh()
+        self._select_section(idx)
+        self.status.emit(f"Section {idx + 1} fill -> {name}.")
+        return True
 
     def _on_sections_changed(self):
         self._refresh_seed_label()           # spec mutated; seed/preview unaffected here
