@@ -21,7 +21,8 @@ import fluidsynth
 import sounddevice as sd
 import soundfile as sf
 
-DEFAULT_SOUNDFONT = Path(__file__).resolve().parents[1] / "assets/soundfonts/FluidR3_GM.sf2"
+from app._bootstrap import resource_root
+DEFAULT_SOUNDFONT = resource_root() / "assets/soundfonts/FluidR3_GM.sf2"
 DRUM_CHANNEL = 9          # GM channel 10
 DRUM_BANK = 128          # GM percussion bank
 _INT16_FULL_SCALE = 32768.0

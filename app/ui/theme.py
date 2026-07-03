@@ -6,11 +6,11 @@ tokens. Fonts are deferred: type ROLES map to system fallbacks here, in ONE plac
 so the four OFL fonts (Space Grotesk / IBM Plex Mono / Special Elite / Saira
 Stencil One) can be registered and re-pointed later without touching widgets.
 """
-from pathlib import Path
-
 from PySide6.QtGui import QFont, QFontDatabase
 
-ASSETS = Path(__file__).resolve().parents[2] / "assets"
+from app._bootstrap import resource_root
+
+ASSETS = resource_root() / "assets"     # repo root on dev, Contents/Resources when frozen
 
 # Bundled OFL/Apache fonts (registered at startup; system fallback if unavailable,
 # e.g. under the offscreen test platform which cannot register app fonts).

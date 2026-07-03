@@ -25,6 +25,16 @@ _FLUIDSYNTH_NAMES = frozenset({
 })
 
 
+def resource_root():
+    """Directory that contains `assets/`. In a py2app bundle this is
+    `<bundle>/Contents/Resources`; on the dev box it is the repo root. Used so
+    `__file__`-relative asset lookups keep working once the code is zipped into the
+    bundle away from the assets tree."""
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent.parent / "Resources"
+    return Path(__file__).resolve().parents[1]     # app/.. == repo root
+
+
 def _bundled_frameworks_dir():
     """Where py2app stages bundled dylibs: `<bundle>/Contents/Frameworks`.
     `sys.executable` in a bundle is `<bundle>/Contents/MacOS/<exe>`."""

@@ -104,3 +104,29 @@ Start **Phase 0 → Phase 1** of `docs/BUILD_PLAN.md`:
 1. Engine-as-library: add list helpers, `resolved_bar`, the 4 extensions, regression test (`GENERAL_MIDI` output == pre-refactor).
 
 Then controller → analyze → playback → UI (vertical-slice: Generate first) → wire/persistence → py2app.
+
+## 8. Packaging (Phase 7 — beta 0.9.0)
+
+Build the unsigned `.app`:
+
+```bash
+# Requires assets/soundfonts/FluidR3_GM.sf2 (148 MB) present + Homebrew fluid-synth.
+rm -rf build dist
+.venv/bin/python setup.py py2app
+# -> dist/Kickflip Shuffle.app  (~1.6 GB — PySide6 + librosa/numba/scipy + sf2)
+```
+
+- **Bundle id** `com.kickflipshuffle.app`, **version** `0.9.0` (beta). Config in `setup.py`.
+- **Native deps:** `setup.py` lists `/opt/homebrew/lib/libfluidsynth.3.dylib` under
+  `frameworks`; py2app/macholib relocates its whole transitive tree (glib, sndfile,
+  portaudio, readline, FLAC, vorbis, …) to `@executable_path/../Frameworks` — verified
+  `otool -L` shows **0** `/opt/homebrew` absolute paths.
+- **Dylib resolution:** `app/_bootstrap.bootstrap()` (first call in `main()`)
+  monkeypatches `ctypes.util.find_library` when frozen so pyfluidsynth loads the
+  BUNDLED libfluidsynth, not a system one. `resource_root()` points asset lookups at
+  `Contents/Resources` when frozen.
+- **Gatekeeper (unsigned):** first launch on another Mac → **right-click → Open** once
+  (or `xattr -dr com.apple.quarantine "Kickflip Shuffle.app"`).
+- **Still to verify (manual):** clean double-click launch on a **second Mac / user
+  account with no dev environment** — dev-box boot is verified; the clean-machine run
+  is the remaining Phase 7 sign-off.

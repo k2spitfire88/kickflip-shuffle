@@ -10,16 +10,15 @@ icon) so it double-click-launches on a clean Mac with no dev environment.
 > `setup.py` + the import shim, then run the build/verify loop WITH the owner. Do
 > not treat a green pytest run as "Phase 7 done".
 
-## Owner decisions (NEEDED before build)
+## Owner decisions (LOCKED 2026-07-03)
 
-- **Bundle identifier** — e.g. `com.kickflipshuffle.app` (reverse-DNS). Owner to
-  confirm the domain/prefix.
-- **Version string** — proposed `1.0.0` (`CFBundleShortVersionString`).
-- **Bundle the 148 MB `FluidR3_GM.sf2`?** BUILD_PLAN says yes (into `Resources/`).
-  That makes the `.app` ~300 MB+. Alternative: first-run download/prompt. Default
-  = bundle (offline, self-contained) unless owner objects.
-- **Signing** — plan says UNSIGNED (document right-click→Open for Gatekeeper). No
-  Developer ID / notarization this phase. Confirm.
+- **Bundle identifier** = `com.kickflipshuffle.app` (`CFBundleIdentifier`).
+- **Version** = `0.9.0` (beta) — `CFBundleShortVersionString` +
+  `CFBundleVersion`; bump on each rebuild.
+- **Bundle the 148 MB `FluidR3_GM.sf2`** into the app (offline, self-contained;
+  `.app` ~300 MB).
+- **Unsigned** — no Developer ID / notarization this phase; document right-click →
+  Open for Gatekeeper.
 
 ## Facts (verified 2026-07-03)
 

@@ -15,7 +15,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Persistence: `Controller.save_project`/`load_project` (`.ppd` = version+spec+seed+output_map+UI extras); `app/ui/settings.py` `Prefs` over QSettings. Undo/redo = deep-copied spec-snapshot stack in the controller.
 - Tests: pytest suite (151 — engine golden, controller, analyze, playback, UI, browser, persistence, undo under `QT_QPA_PLATFORM=offscreen`; `tests/conftest.py` isolates QSettings to a temp dir).
 
-**Still to build:** Phase **7** (py2app packaging — `setup.py` not written yet), **8** (enhancements incl. the deferred **playhead**). Read `docs/BUILD_PLAN.md` + the per-phase plans in `docs/plans/` before continuing; locked decisions live there and in `docs/HANDOFF.md`.
+**Phase 7 (packaging) — built, dev-box verified.** `setup.py` (py2app) builds `dist/Kickflip Shuffle.app` (unsigned beta `0.9.0`, id `com.kickflipshuffle.app`, ~1.6 GB, bundles the sf2). `app/_bootstrap.py` shims the fluidsynth dylib + `resource_root()` for frozen asset paths. libfluidsynth's transitive dylib tree is fully relocated into the bundle (0 Homebrew-absolute deps). Builds + boots on the dev box. **Remaining Phase 7 sign-off:** clean double-click launch on a second Mac/user account (no dev env) — see `docs/HANDOFF.md` §8.
+
+**Still to build:** Phase **8** (enhancements incl. the deferred **playhead**), + the clean-machine packaging verify above. Read `docs/BUILD_PLAN.md` + the per-phase plans in `docs/plans/` before continuing; locked decisions live there and in `docs/HANDOFF.md`.
 
 **Open follow-up:** `EZ_DRUMMER_3` note values are UNVERIFIED (only `tom_hi` 50→48 diverges from GM); audition `EZ_DRUMMER_3_ladder.mid` (regenerate via `Controller.write_note_ladder(path, output_map="EZ_DRUMMER_3")`) in EZ Drummer 3.
 
