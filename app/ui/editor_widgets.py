@@ -193,6 +193,11 @@ class _GridCanvas(QWidget):
                 p.fillRect(x + 1, y + 1, self.CELL - 2, self.ROW_H - 2,
                            QColor("#e2b84a") if on
                            else QColor("#211c14" if beat else "#1a160f"))
+        ph = self._grid._playhead
+        if ph is not None and 0 <= ph < 16:
+            x = self.LABEL_W + ph * self.CELL
+            p.fillRect(x, 0, self.CELL, len(ROLES) * self.ROW_H,
+                       QColor(226, 184, 74, 70))          # translucent amber column
         p.end()
 
 
@@ -203,6 +208,7 @@ class StepGrid(QWidget):
         super().__init__(parent)
         self._c = controller
         self._i = 0
+        self._playhead = None                        # current step column, or None
         self.matrix = {r: [0] * 16 for r in ROLES}
         lay = QVBoxLayout(self)
         ctl = QHBoxLayout()
@@ -221,6 +227,7 @@ class StepGrid(QWidget):
 
     def load(self, index):
         self._i = index
+        self.clear_playhead()                        # drop stale playhead on switch
         bars = self._c.spec["sections"][index].get("bars", 4)
         self.bar.blockSignals(True)
         self.bar.setRange(0, max(0, bars - 1))
@@ -246,3 +253,17 @@ class StepGrid(QWidget):
         self._c.clear_bar_pattern(self._i, self.bar.value())
         self._reseed()
         self.edited.emit()
+
+    def set_playhead(self, section_index, bar_index, step):
+        """Show the playhead at `step` only when this grid is displaying the
+        (section, bar) currently playing; otherwise hide it."""
+        showing = (section_index == self._i and bar_index == self.bar.value())
+        new = step if showing else None
+        if new != self._playhead:
+            self._playhead = new
+            self.canvas.update()
+
+    def clear_playhead(self):
+        if self._playhead is not None:
+            self._playhead = None
+            self.canvas.update()

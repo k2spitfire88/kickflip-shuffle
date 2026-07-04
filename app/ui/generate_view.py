@@ -4,7 +4,7 @@ The view is the renderer; `Controller` (and the engine behind it) is the single
 source of truth. Every spec mutation goes through the controller; programmatic
 widget updates are wrapped in blockSignals so they don't re-enter handlers.
 """
-from PySide6.QtCore import Qt, Signal, QSize, QThread, QObject
+from PySide6.QtCore import Qt, Signal, QSize, QThread, QObject, QTimer
 from PySide6.QtGui import QColor, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout, QLabel, QListWidget, QListWidgetItem,
@@ -74,6 +74,9 @@ class GenerateView(QWidget):
         self._last_export = None            # last written .mid path (for Reveal)
         self._thread = None
         self._worker = None
+        self._play_timer = QTimer(self)     # playhead poll while previewing
+        self._play_timer.setInterval(33)    # ~30 Hz
+        self._play_timer.timeout.connect(self._tick_playhead)
         self._build_ui()
         self._populate_profiles()
         self._populate_output_maps()
@@ -272,6 +275,7 @@ class GenerateView(QWidget):
     def shutdown(self):
         """Quit/wait any running render thread. Called by MainWindow.closeEvent
         (a child widget's closeEvent does NOT fire inside a QStackedWidget)."""
+        self._play_timer.stop()
         if self._thread is not None:
             self._thread.quit()
             self._thread.wait()
@@ -284,17 +288,52 @@ class GenerateView(QWidget):
         self._finish_thread()
         try:
             self._c.play()                             # transport is non-blocking
+            self._play_timer.start()                   # drive the playhead
             self.status.emit("Playing preview (General MIDI).")
         except Exception as exc:                       # noqa: BLE001 - surface to UI
             self.status.emit(f"Playback unavailable: {exc}")
 
     def _on_render_failed(self, message):
         self._finish_thread()
+        self._play_timer.stop()
+        self.grid.clear_playhead()
         self.status.emit(f"Playback unavailable: {message}")
 
     def _on_stop(self):
         self._c.stop()
+        self._play_timer.stop()
+        self.grid.clear_playhead()
         self.status.emit("Stopped.")
+
+    # ------------------------------------------------------------ playhead
+    def _tick_playhead(self):
+        pos = self._position_to_grid(self._c.playback_position)
+        if pos is None:                                # ended (or no spec) -> clear
+            self._play_timer.stop()
+            self.grid.clear_playhead()
+            return
+        self.grid.set_playhead(*pos)
+
+    def _position_to_grid(self, seconds):
+        """Map a playback position (seconds) to (section_index, bar_in_section,
+        step 0..15), or None if there is no spec or the position is past the
+        arrangement end. Assumes 4/4, 16 steps per bar."""
+        spec = self._c.spec
+        if spec is None or seconds <= 0:
+            return None
+        tempo = spec.get("tempo") or 120
+        ppq = spec.get("ppq", 480)
+        ticks_per_bar = 4 * ppq                        # 4 beats
+        tick = seconds * tempo * ppq / 60.0
+        bar_global = int(tick // ticks_per_bar)
+        step = int((tick % ticks_per_bar) // (ticks_per_bar / 16))
+        step = max(0, min(15, step))
+        for si, sec in enumerate(spec.get("sections", [])):
+            bars = int(sec.get("bars", 4))
+            if bar_global < bars:
+                return si, bar_global, step
+            bar_global -= bars
+        return None                                    # past the end (into tail)
 
     def _on_export(self):
         """Export straight to the default folder with a de-duped filename."""
