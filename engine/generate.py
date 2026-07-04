@@ -526,6 +526,10 @@ def song_from_profile(profile_name, overrides=None):
         if role == "chorus":
             sec["crash_in"] = True
         sections.append(sec)
+    # The final section has nothing to transition into — a trailing fill would
+    # "fill into silence" (the audible "goes off the rails at the end"). End on the
+    # groove instead.
+    sections[-1].pop("fill_at_end", None)
     return {"ppq": 480, "profile": profile_name,
             "tempo": ov.get("tempo", prof["tempo"]),
             "overrides": ov, "sections": sections}
