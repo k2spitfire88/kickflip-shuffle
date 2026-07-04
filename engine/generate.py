@@ -615,6 +615,12 @@ def _bar_override(sec, b):
     return {inst: list(row) for inst, row in rows.items()}
 
 
+# Per-section "feel" -> integer (numerator, denominator) bar/step time-scale.
+# normal = 1x, half = bars twice as long, double = bars half as long. Kept as
+# integer ratios so ticks stay exact (ppq must be divisible by 8 for `double`).
+_FEEL = {"normal": (1, 1), "half": (2, 1), "double": (1, 2)}
+
+
 def _iter_bars(spec, rng, omap):
     """Drive the full per-section / per-bar resolution off a single rng stream.
 
@@ -636,6 +642,7 @@ def _iter_bars(spec, rng, omap):
                                                     prof["humanize"]))}
 
     bar_index = 0
+    bar_start = 0                        # cumulative tick start (bars vary with feel)
     for sec_index, sec in enumerate(spec["sections"]):
         ax = _effective_axes(sec, glob)
         groove_name = _resolve_groove(sec, prof, rng, breakdown=ax["breakdown"])
@@ -644,6 +651,12 @@ def _iter_bars(spec, rng, omap):
                              f"Options: {sorted(GROOVES)}")
         base = _normalize(GROOVES[groove_name])
         bars = sec.get("bars", 4)
+
+        # Per-section feel time-scale (normal => identical to today, byte-for-byte).
+        num, den = _FEEL.get(sec.get("feel", "normal"), (1, 1))
+        sstep = max(1, step_ticks * num // den)          # scaled step spacing
+        sbar = STEPS * step_ticks * num // den           # scaled bar width
+        note_dur = max(1, sstep - 2)
 
         want_fill = sec.get("fill") or (sec.get("fill_at_end") and
                                         rng.random() < ax["fill_prob"])
@@ -659,7 +672,6 @@ def _iter_bars(spec, rng, omap):
                 rows = _resolved_bar_rows(base, sec, b, bars, want_fill,
                                           fill_name, ax, rng)
             h = ax["humanize"]
-            bar_start = bar_index * STEPS * step_ticks
             bar_events = []
             for inst, row in rows.items():
                 note = omap[inst]
@@ -669,10 +681,11 @@ def _iter_bars(spec, rng, omap):
                     vjit = int(rng.uniform(-8, 8) * h)
                     tjit = int(rng.uniform(-6, 6) * h)
                     v = max(1, min(127, vel + vjit))
-                    t = max(0, bar_start + step * step_ticks + tjit)
-                    bar_events.append((t, note, v, step_ticks - 2))
+                    t = max(0, bar_start + step * sstep + tjit)
+                    bar_events.append((t, note, v, note_dur))
             yield sec_index, bar_index, groove_name, fill_name, rows, bar_events
             bar_index += 1
+            bar_start += sbar
 
 
 def build_song(spec, tempo=None, seed=None, output_map=None):
@@ -734,14 +747,14 @@ def compute_section_markers(spec):
     output — markers are written only when passed to ``write_midi``."""
     ppq = spec.get("ppq", 480)
     step_ticks = ppq // (STEPS // 4)
-    bar_ticks = STEPS * step_ticks
     markers = []
-    bar_index = 0
+    tick = 0                                    # cumulative (bars vary with feel)
     for i, sec in enumerate(spec.get("sections", [])):
         label = (sec.get("label") or sec.get("role") or sec.get("groove")
                  or f"section {i + 1}")
-        markers.append((bar_index * bar_ticks, str(label)))
-        bar_index += int(sec.get("bars", 4))
+        markers.append((tick, str(label)))
+        num, den = _FEEL.get(sec.get("feel", "normal"), (1, 1))
+        tick += int(sec.get("bars", 4)) * STEPS * step_ticks * num // den
     return markers
 
 

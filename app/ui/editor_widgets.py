@@ -118,11 +118,16 @@ class SectionEditor(QWidget):
         self.bars = QSpinBox()
         self.bars.setRange(1, 32)
         self.crash = QCheckBox("crash in")
+        self.feel = QComboBox()
+        for label, data in (("normal", None), ("half-time", "half"),
+                            ("double-time", "double")):
+            self.feel.addItem(label, data)
 
         form.addRow("Role", self.role)
         form.addRow("Groove", self.groove)
         form.addRow("Fill", self.fill)
         form.addRow("Bars", self.bars)
+        form.addRow("Feel", self.feel)
         form.addRow("", self.crash)
 
         self.sliders = {}
@@ -133,7 +138,7 @@ class SectionEditor(QWidget):
             self.sliders[k] = s
             form.addRow(k, s)
 
-        for w in (self.role, self.groove, self.fill):
+        for w in (self.role, self.groove, self.fill, self.feel):
             w.currentIndexChanged.connect(self._commit)
         self.bars.valueChanged.connect(self._commit)
         self.crash.toggled.connect(self._commit)
@@ -142,7 +147,7 @@ class SectionEditor(QWidget):
         self._i = None                     # suppress _commit during population
         s = self._c.spec["sections"][index]
         widgets = [self.role, self.groove, self.fill, self.bars, self.crash,
-                   *self.sliders.values()]
+                   self.feel, *self.sliders.values()]
         for w in widgets:
             w.blockSignals(True)
         role = s.get("role", "verse")
@@ -154,6 +159,7 @@ class SectionEditor(QWidget):
             s.get("fill") if isinstance(s.get("fill"), str) else None)))
         self.bars.setValue(s.get("bars", 4))
         self.crash.setChecked(bool(s.get("crash_in", False)))
+        self.feel.setCurrentIndex(max(0, self.feel.findData(s.get("feel"))))
         axes = s.get("axes", {})
         for k, sl in self.sliders.items():
             sl.setValue(int(round(axes.get(k, 0.0) * 100)))
@@ -173,7 +179,8 @@ class SectionEditor(QWidget):
         self._c.update_section(
             self._i, role=self.role.currentText(), bars=self.bars.value(),
             crash_in=self.crash.isChecked(), groove=self.groove.currentData(),
-            fill=self.fill.currentData(), axes=(axes or None))
+            fill=self.fill.currentData(), axes=(axes or None),
+            feel=self.feel.currentData())
         self.changed.emit()
 
 

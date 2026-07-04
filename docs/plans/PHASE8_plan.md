@@ -117,14 +117,44 @@ can change without rework.
   (already tracked/undoable from 6b). Half/double: per-section toggle that scales
   the section's feel — either a `feel` field the engine honours or a groove swap;
   confirm whether this maps to an existing axis/groove or needs an engine field.
-- **Open (needs engine-owner call at 8f's own plan-gate):** half-time has a natural
-  groove target (`section["groove"] = "half_time_shuffle"` or `"halftime"`), but
-  double-time has NO single groove — it implies a feel/tempo-scale. Two options: (a)
-  groove-swap only for half-time + drop double-time, or (b) add an engine `feel`
-  field (half/normal/double) that scales the bar. Decide at 8f. Tap-tempo has no such
-  ambiguity — it just calls `set_tempo` (tracked/undoable, verified).
-- Risk 🔵: double-time engine mechanism unresolved. Files: `generate_view.py`,
-  possibly `engine/generate.py` (feel).
+- **Owner decision (LOCKED): full engine `feel` field** = `section["feel"]` in
+  `{normal (default/absent), half, double}`, time-scaling that section's bars.
+- **Tap tempo:** a "Tap" button; average recent inter-tap intervals -> BPM ->
+  `controller.set_tempo` (tracked/undoable). Reset the tap buffer after a long gap
+  (>2 s). No engine change.
+- **Feel = per-section bar-duration scale.** A bar's tick width becomes
+  `STEPS * step_ticks * feel` where `feel` = 1 (normal) / 2 (half, bar twice as
+  long) / 0.5 (double, bar half as long). Step spacing within the bar scales the
+  same way, so the groove keeps 16 steps but plays slower/faster.
+  - **`_iter_bars` must switch from `bar_index * STEPS * step_ticks` to a CUMULATIVE
+    running `bar_start`** (bars are no longer uniform width). Absent/`normal` feel =
+    scale 1.0 -> identical to today -> **golden byte-identical** (guard).
+  - **Downstream tick consumers must all use the same cumulative/scaled math:**
+    `compute_section_markers` (section start ticks), `resolved_bar` (its `target`
+    is a bar COUNT, not ticks — likely unaffected, but the rows themselves don't
+    depend on feel; verify), and the playhead `_position_to_grid` (seconds->bar/step
+    must account for per-section feel). List every consumer; a missed one =
+    playhead/marker drift on feel!=normal sections.
+  - **Integer scaling via (num, den)** (plan-gate): `normal=(1,1)`, `half=(2,1)`,
+    `double=(1,2)`. `scaled_step_ticks = step_ticks * num // den`;
+    `scaled_bar_ticks = STEPS * step_ticks * num // den`. At ppq=480
+    (step_ticks=120) all stay integral; document that ppq must be divisible by 8
+    for `double`.
+  - **dur scales with feel** (plan-gate 🔴 resolved): note dur =
+    `max(1, scaled_step_ticks - 2)` (keep the 2-tick gap, proportional). Normal ->
+    `step_ticks - 2` unchanged.
+  - **`feel` is independent of 8e lock** — locking freezes groove/fill only, not
+    feel. `feel` is an additive section key; set via update_section (tracked); a
+    feel control in the section editor.
+  - `compute_section_markers` AND `_position_to_grid` MUST both iterate sections
+    accumulating `scaled_bar_ticks` (not uniform `bar_index * bar_ticks`). New 8f
+    tests use a cumulative-aware tick helper (not the uniform one in
+    `tests/test_patterns.py`).
+- Risk 🔴: golden byte-identity for the cumulative-bar_start refactor (normal path
+  must not move a single tick). Risk 🟡: every tick consumer must adopt scaled math.
+  Files: `engine/generate.py` (_iter_bars, compute_section_markers, feel helper),
+  `app/controller.py` (set_section_feel), `app/ui/generate_view.py` (_position_to_grid,
+  tap tempo), `app/ui/editor_widgets.py` (feel control).
 
 ### 8g — Count-in / click track
 - Add an optional click/count-in to the PREVIEW render only (not the export .mid):

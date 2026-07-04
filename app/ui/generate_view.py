@@ -74,6 +74,7 @@ class GenerateView(QWidget):
         self._last_export = None            # last written .mid path (for Reveal)
         self._thread = None
         self._worker = None
+        self._taps = []                     # tap-tempo click timestamps
         self._play_timer = QTimer(self)     # playhead poll while previewing
         self._play_timer.setInterval(33)    # ~30 Hz
         self._play_timer.timeout.connect(self._tick_playhead)
@@ -111,6 +112,10 @@ class GenerateView(QWidget):
         self.bpm.setRange(40, 300)          # before any setValue (Qt default max=99)
         self.bpm.valueChanged.connect(self._on_bpm_changed)
         controls.addWidget(self.bpm)
+        self.tap_btn = QPushButton("Tap")
+        self.tap_btn.setToolTip("Tap repeatedly to set the tempo.")
+        self.tap_btn.clicked.connect(self._on_tap)
+        controls.addWidget(self.tap_btn)
 
         self.seed_label = QLabel("seed —")
         self.seed_label.setObjectName("muted")
@@ -224,6 +229,27 @@ class GenerateView(QWidget):
         self._c.song_from_profile(name)
         self._refresh_from_spec()
 
+    def _on_tap(self):
+        """Tap-tempo: average recent inter-tap intervals -> BPM -> set via the BPM
+        spinbox (so it routes through set_tempo, tracked/undoable). Resets after a
+        >2 s gap."""
+        import time
+        if self._c.spec is None:
+            return
+        now = time.monotonic()
+        if self._taps and now - self._taps[-1] > 2.0:
+            self._taps = []
+        self._taps.append(now)
+        self._taps = self._taps[-8:]                   # average the last few taps
+        if len(self._taps) >= 2:
+            intervals = [b - a for a, b in zip(self._taps, self._taps[1:])]
+            avg = sum(intervals) / len(intervals)
+            if avg <= 0:                               # identical timestamps -> skip
+                return
+            bpm = max(40, min(300, int(round(60.0 / avg))))
+            self.bpm.setValue(bpm)                     # fires _on_bpm_changed
+            self.status.emit(f"Tap tempo: {bpm} BPM")
+
     def _on_bpm_changed(self, value):
         if self._c.spec is None:
             return
@@ -316,25 +342,33 @@ class GenerateView(QWidget):
             return
         self.grid.set_playhead(*pos)
 
+    _FEEL = {"normal": (1, 1), "half": (2, 1), "double": (1, 2)}
+
     def _position_to_grid(self, seconds):
         """Map a playback position (seconds) to (section_index, bar_in_section,
         step 0..15), or None if there is no spec or the position is past the
-        arrangement end. Assumes 4/4, 16 steps per bar."""
+        arrangement end. 4/4, 16 steps per bar; per-section `feel` scales bar
+        width (mirrors the engine's _iter_bars)."""
         spec = self._c.spec
         if spec is None or seconds <= 0:
             return None
         tempo = spec.get("tempo") or 120
         ppq = spec.get("ppq", 480)
-        ticks_per_bar = 4 * ppq                        # 4 beats
+        step_ticks = ppq // 4
+        bar_ticks = 16 * step_ticks
         tick = seconds * tempo * ppq / 60.0
-        bar_global = int(tick // ticks_per_bar)
-        step = int((tick % ticks_per_bar) // (ticks_per_bar / 16))
-        step = max(0, min(15, step))
+        acc = 0
         for si, sec in enumerate(spec.get("sections", [])):
-            bars = int(sec.get("bars", 4))
-            if bar_global < bars:
-                return si, bar_global, step
-            bar_global -= bars
+            num, den = self._FEEL.get(sec.get("feel", "normal"), (1, 1))
+            sbar = bar_ticks * num // den
+            sstep = max(1, step_ticks * num // den)
+            sec_ticks = int(sec.get("bars", 4)) * sbar
+            if tick < acc + sec_ticks:
+                into = tick - acc
+                bar_in = int(into // sbar)
+                step = max(0, min(15, int((into % sbar) // sstep)))
+                return si, bar_in, step
+            acc += sec_ticks
         return None                                    # past the end (into tail)
 
     def _on_export(self):
@@ -491,5 +525,6 @@ class GenerateView(QWidget):
 
     def _set_controls_enabled(self, on):
         for w in (self.bpm, self.map_combo, self.regen_btn, self.play_btn,
-                  self.stop_btn, self.export_btn, self.export_as_btn, self.drag_btn):
+                  self.stop_btn, self.export_btn, self.export_as_btn, self.drag_btn,
+                  self.tap_btn):
             w.setEnabled(on)

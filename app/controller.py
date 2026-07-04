@@ -333,6 +333,14 @@ class Controller:
         self._invalidate_preview()
         return spec
 
+    def set_section_feel(self, index, feel):
+        """Set a section's time-feel: 'normal' (default, unsets the key so the path
+        stays byte-identical), 'half' (bars twice as long), or 'double' (half as
+        long). Tracked/undoable via update_section."""
+        if feel not in ("normal", "half", "double"):
+            raise ValueError(f"feel must be normal/half/double, got {feel!r}")
+        return self.update_section(index, feel=(None if feel == "normal" else feel))
+
     def regenerate(self):
         """Draw a new seed and re-generate. Locked sections carry an explicit
         (frozen-at-lock) groove so they keep their part; unlocked sections re-roll.
