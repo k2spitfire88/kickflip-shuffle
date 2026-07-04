@@ -54,6 +54,8 @@ class Controller:
         self._context_sr = None
         self._preview_buf = None
         self._preview_sr = None
+        self._preview_offset = 0.0      # seconds of count-in at the head of the buffer
+        self._count_in = 0              # preview count-in beats (0 = off)
         self._player = None
         self._undo = []
         self._redo = []
@@ -560,7 +562,7 @@ class Controller:
         return self._context_audio
 
     def render_preview(self, spec=None, *, seed=None, sample_rate=44100,
-                       with_context=False):
+                       with_context=False, count_in=None):
         """Render the spec's drums to an audio buffer and hold it.
 
         Preview always uses GENERAL_MIDI (the bundled sf2 is a GM bank; an EZD3
@@ -577,13 +579,34 @@ class Controller:
         self._spec = spec
         events = engine.build_song(spec, seed=self._ensure_seed(),
                                    output_map=engine.GENERAL_MIDI)
+        tempo = spec.get("tempo") or engine.PROFILES[spec["profile"]]["tempo"]
         buf = playback.render_events(
-            events, tempo=spec.get("tempo") or engine.PROFILES[spec["profile"]]["tempo"],
-            ppq=spec.get("ppq", 480), sample_rate=sample_rate)
+            events, tempo=tempo, ppq=spec.get("ppq", 480), sample_rate=sample_rate)
         if with_context and self._context_audio is not None:
             buf = playback.mix(buf, self._context_audio)
+        # Count-in is PREVIEW ONLY — prepended to the buffer here, never in export
+        # (export uses build_song/write_midi, not this path).
+        ci = self._count_in if count_in is None else int(count_in)
+        if ci > 0:
+            import numpy as np
+            click = playback.click_track(ci, tempo, sample_rate=sample_rate)
+            buf = np.concatenate([click, buf])
+            self._preview_offset = ci * 60.0 / tempo
+        else:
+            self._preview_offset = 0.0
         self._preview_buf, self._preview_sr = buf, sample_rate
         return buf
+
+    @property
+    def preview_offset(self):
+        """Seconds of count-in prepended to the current preview buffer (0 if none).
+        The playhead subtracts this to map playback position to musical time."""
+        return self._preview_offset
+
+    def set_count_in(self, beats):
+        """Set the preview count-in length in beats (0 = off)."""
+        self._count_in = max(0, int(beats))
+        self._invalidate_preview()
 
     def audition(self, spec, *, seed=0, sample_rate=44100):
         """Render a THROWAWAY spec into the preview buffer for immediate playback,
@@ -598,6 +621,7 @@ class Controller:
             events, tempo=spec.get("tempo") or engine.PROFILES[spec["profile"]]["tempo"],
             ppq=spec.get("ppq", 480), sample_rate=sample_rate)
         self._preview_buf, self._preview_sr = buf, sample_rate
+        self._preview_offset = 0.0                 # auditions have no count-in
         return buf
 
     def play(self, *, with_context=False):

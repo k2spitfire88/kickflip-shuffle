@@ -23,6 +23,26 @@ import soundfile as sf
 
 from app._bootstrap import resource_root
 DEFAULT_SOUNDFONT = resource_root() / "assets/soundfonts/FluidR3_GM.sf2"
+
+
+def click_track(beats, tempo, *, sample_rate=44100, freq=1000.0):
+    """A `beats`-beat metronome count-in as a stereo float32 buffer at `tempo`.
+    Preview-only (prepended to the drum preview); never part of exported MIDI."""
+    if beats <= 0 or tempo <= 0:
+        return np.zeros((1, 2), dtype=np.float32)
+    beat = 60.0 / float(tempo)
+    total = int(round(beats * beat * sample_rate))
+    buf = np.zeros((max(total, 1), 2), dtype=np.float32)
+    click_len = min(int(0.03 * sample_rate), total or 1)
+    t = np.arange(click_len) / sample_rate
+    blip = (0.5 * np.sin(2 * np.pi * freq * t) * np.exp(-t * 40.0)).astype(np.float32)
+    for b in range(int(beats)):
+        start = int(round(b * beat * sample_rate))
+        end = min(start + click_len, total)
+        if end > start:
+            buf[start:end, 0] += blip[:end - start]
+            buf[start:end, 1] += blip[:end - start]
+    return buf
 DRUM_CHANNEL = 9          # GM channel 10
 DRUM_BANK = 128          # GM percussion bank
 _INT16_FULL_SCALE = 32768.0

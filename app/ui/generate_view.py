@@ -8,7 +8,7 @@ from PySide6.QtCore import Qt, Signal, QSize, QThread, QObject, QTimer
 from PySide6.QtGui import QColor, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout, QLabel, QListWidget, QListWidgetItem,
-    QPushButton, QSpinBox, QComboBox, QFileDialog,
+    QPushButton, QSpinBox, QComboBox, QFileDialog, QCheckBox,
 )
 
 from engine.generate import _AXIS_KEYS as AXIS_KEYS  # single source of axis order
@@ -138,6 +138,10 @@ class GenerateView(QWidget):
         self.play_btn.clicked.connect(self._on_play)
         self.stop_btn = QPushButton("Stop")
         self.stop_btn.clicked.connect(self._on_stop)
+        self.count_in = QCheckBox("Count-in")
+        self.count_in.setToolTip("Prepend a 4-beat click before preview playback.")
+        self.count_in.toggled.connect(
+            lambda on: self._c.set_count_in(4 if on else 0))
         self.export_btn = QPushButton("Export .mid")
         self.export_btn.clicked.connect(self._on_export)
         self.export_as_btn = QPushButton("Export As…")
@@ -154,6 +158,7 @@ class GenerateView(QWidget):
                                  ".mid directly.")
         transport.addWidget(self.play_btn)
         transport.addWidget(self.stop_btn)
+        transport.addWidget(self.count_in)
         transport.addStretch(1)
         transport.addWidget(self.drag_btn)
         transport.addWidget(self.export_btn)
@@ -351,7 +356,10 @@ class GenerateView(QWidget):
         width (mirrors the engine's _iter_bars)."""
         spec = self._c.spec
         if spec is None or seconds <= 0:
-            return None
+            return None                            # not playing yet
+        seconds -= self._c.preview_offset         # skip the count-in head, if any
+        if seconds < 0:
+            return None                            # still counting in -> no playhead
         tempo = spec.get("tempo") or 120
         ppq = spec.get("ppq", 480)
         step_ticks = ppq // 4
