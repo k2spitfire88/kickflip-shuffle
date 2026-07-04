@@ -446,6 +446,50 @@ _OFFSPRING_ERAS = [
          ghost=0.4, ornament=0.4, fill_prob=0.65, humanize=0.9),
 ]
 
+# MxPx — one drummer (Yuri Ruley) throughout; splits are style-eras, incl. the
+# post-2018 re-energized comeback the owner hears starting at the self-titled LP.
+_MXPX_ERAS = [
+    # 1) Tooth & Nail: raw fast Christian skate-punk, simple + relentless.
+    #    Straight fast punk + skank (NOT d-beat/crust); tops ~215, not blast.
+    _era("Tooth & Nail (94–97)", (185, 225),           # Punk Rawk Show / Move to Bremerton
+         ["skank", "ramones_buzzsaw", "two_step", "verse_basic"],
+         ["chorus_crash", "skank"], ["skank", "halftime"],
+         ["ramones_buzzsaw", "skank"],
+         ["dbeat_roll", "tom_descend"],
+         ghost=0.25, ornament=0.25, fill_prob=0.55),
+    # 2) Major-label: polished melodic pop-punk, radio sheen.
+    _era("Major-label (98–01)", (160, 205),            # Responsibility 180
+         ["verse_basic", "skank", "surf", "four_floor"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "skank"],
+         ["verse_basic", "surf"],
+         ["triplet_snare", "tom_around", "tom_descend"],
+         ghost=0.4, ornament=0.45, fill_prob=0.7),
+    # 3) Mid-career: polished melodic pop-punk PRIMARY (Before Everything & After
+    #    pop, Secret Weapon fast-melodic) with a heavier Panic streak (breakdown
+    #    in the bridge only) — NOT a heavy era across the board.
+    _era("Mid-career (03–07)", (150, 210),             # BE&A pop / Panic heavy / Secret Weapon
+         ["verse_basic", "verse_doubles", "skank", "four_floor"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "breakdown_chug"],
+         ["verse_basic", "surf"],
+         ["tom_descend", "triplet_snare", "snare_buildup"],
+         ghost=0.4, ornament=0.45, fill_prob=0.7, humanize=0.9),
+    # 4) Return: Plans Within Plans — fast, aggressive, back-to-roots.
+    _era("Return (2012)", (175, 210),                  # Plans Within Plans fast punk
+         ["skank", "ramones_buzzsaw", "two_step", "verse_basic"],
+         ["chorus_crash", "chorus_open_hat"], ["skank", "halftime"],
+         ["ramones_buzzsaw", "skank"],
+         ["dbeat_roll", "tom_descend", "triplet_snare"],
+         ghost=0.3, ornament=0.35, fill_prob=0.65),
+    # 5) Comeback: MxPx (s/t) + Find a Way Home — re-energized, celebratory,
+    #    anthemic drive (the distinct energy that returned at the self-titled).
+    _era("Comeback (18–23)", (160, 205),               # MxPx s/t / Find a Way Home
+         ["verse_basic", "skank", "two_step", "four_floor"],
+         ["chorus_crash", "chorus_open_hat", "chorus_ride_bell"],
+         ["halftime", "skank"], ["verse_basic", "skank"],
+         ["triplet_snare", "tom_around", "tom_descend"],
+         ghost=0.4, ornament=0.45, fill_prob=0.75, humanize=0.95),
+]
+
 
 PROFILES = {
     # --- Generic / broad default ---
@@ -487,7 +531,8 @@ PROFILES = {
                ["chorus_crash", "skank"], ["skank", "halftime"],
                ["ramones_buzzsaw", "skank"],
                ["ramones_crash", "dbeat_roll", "tom_descend"],
-               ghost=0.2, ornament=0.2, fill_prob=0.6, humanize=0.8),
+               ghost=0.2, ornament=0.2, fill_prob=0.6, humanize=0.8,
+               eras=_MXPX_ERAS),
     "skate_punk": _p("90s_skate", 205,
                      ["skank", "dbeat", "ramones_buzzsaw"],
                      ["chorus_crash", "skank"], ["dbeat", "skank"],
