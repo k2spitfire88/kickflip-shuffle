@@ -75,6 +75,7 @@ class GenerateView(QWidget):
         self._thread = None
         self._worker = None
         self._taps = []                     # tap-tempo click timestamps
+        self._play_target = None            # None = whole song, int = section index
         self._play_timer = QTimer(self)     # playhead poll while previewing
         self._play_timer.setInterval(33)    # ~30 Hz
         self._play_timer.timeout.connect(self._tick_playhead)
@@ -139,6 +140,10 @@ class GenerateView(QWidget):
         self.play_btn = QPushButton("Play")
         self.play_btn.setObjectName("primary")
         self.play_btn.clicked.connect(self._on_play)
+        self.play_btn.setToolTip("Preview the selected section.")
+        self.play_all_btn = QPushButton("Play Song")
+        self.play_all_btn.setToolTip("Preview the whole arrangement.")
+        self.play_all_btn.clicked.connect(self._on_play_all)
         self.stop_btn = QPushButton("Stop")
         self.stop_btn.clicked.connect(self._on_stop)
         self.count_in = QCheckBox("Count-in")
@@ -160,6 +165,7 @@ class GenerateView(QWidget):
         self.drag_btn.setToolTip("Drag this onto a DAW/EZ Drummer track to drop the "
                                  ".mid directly.")
         transport.addWidget(self.play_btn)
+        transport.addWidget(self.play_all_btn)
         transport.addWidget(self.stop_btn)
         transport.addWidget(self.count_in)
         transport.addStretch(1)
@@ -306,8 +312,20 @@ class GenerateView(QWidget):
         self.status.emit("Regenerated (locked sections kept).")
 
     def _on_play(self):
+        # Intuitive default: Play previews the SELECTED section (whole song if no
+        # section is selected). "Play Song" plays the full arrangement.
+        self._start_render(target=self.current_section_index())
+
+    def _on_play_all(self):
+        self._start_render(target=None)                # whole arrangement
+
+    def _start_render(self, *, target):
         if self._thread is not None:                   # a render is already running
-            return
+            return                                     # ignore the click; keep its target
+        # Assign AFTER the guard on purpose: a click during an in-flight render is
+        # ignored entirely (controls are also disabled below), so it must not
+        # overwrite the running render's target.
+        self._play_target = target
         # Disable ALL mutating controls for the render duration: the worker thread
         # reads/writes controller spec/seed/buffer, so a concurrent Regenerate/BPM/
         # Export would race it (render against a half-swapped spec / clobbered buffer).
@@ -347,9 +365,14 @@ class GenerateView(QWidget):
     def _on_render_done(self):
         self._finish_thread()
         try:
-            self._c.play()                             # transport is non-blocking
+            if self._play_target is not None:
+                self._c.play_section(self._play_target)
+                self.status.emit(f"Playing section {self._play_target + 1} "
+                                 "(General MIDI).")
+            else:
+                self._c.play()                         # transport is non-blocking
+                self.status.emit("Playing preview (General MIDI).")
             self._play_timer.start()                   # drive the playhead
-            self.status.emit("Playing preview (General MIDI).")
         except Exception as exc:                       # noqa: BLE001 - surface to UI
             self.status.emit(f"Playback unavailable: {exc}")
 
@@ -384,7 +407,9 @@ class GenerateView(QWidget):
         spec = self._c.spec
         if spec is None or seconds <= 0:
             return None                            # not playing yet
-        seconds -= self._c.preview_offset         # skip the count-in head, if any
+        # Map transport position to musical time: drop the count-in head, add the
+        # base (0 for the full song; the section start when auditioning a section).
+        seconds = seconds - self._c.preview_offset + self._c.play_base
         if seconds < 0:
             return None                            # still counting in -> no playhead
         tempo = spec.get("tempo") or 120
@@ -560,6 +585,7 @@ class GenerateView(QWidget):
 
     def _set_controls_enabled(self, on):
         for w in (self.bpm, self.map_combo, self.regen_btn, self.play_btn,
-                  self.stop_btn, self.export_btn, self.export_as_btn, self.drag_btn,
-                  self.tap_btn, self.variations_btn):
+                  self.play_all_btn, self.stop_btn, self.export_btn,
+                  self.export_as_btn, self.drag_btn, self.tap_btn,
+                  self.variations_btn):
             w.setEnabled(on)

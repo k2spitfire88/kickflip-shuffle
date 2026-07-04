@@ -55,6 +55,7 @@ class Controller:
         self._preview_buf = None
         self._preview_sr = None
         self._preview_offset = 0.0      # seconds of count-in at the head of the buffer
+        self._play_base = 0.0           # musical seconds the current play buffer starts at
         self._count_in = 0              # preview count-in beats (0 = off)
         self._player = None
         self._undo = []
@@ -643,9 +644,47 @@ class Controller:
         shared transport. Does not disturb the held preview buffer/offset used by
         the main play()."""
         from . import playback
+        self._play_base = 0.0
         if self._player is None:
             self._player = playback.Player()
         self._player.load(buf, sample_rate)
+        self._player.play()
+
+    @property
+    def play_base(self):
+        """Musical seconds at which the currently-playing buffer starts (0 for the
+        full song; the section start when auditioning a single section). The
+        playhead adds this to the transport position to map back to the grid."""
+        return self._play_base
+
+    def play_section(self, section_index):
+        """Play ONLY the selected section, sliced out of the held full-song preview
+        buffer so it matches exactly what plays in context (same seed-resolved
+        groove/fill). Requires a current preview (render first)."""
+        from . import playback
+        if self._preview_buf is None:
+            raise ValueError("no rendered preview; render before play_section")
+        spec = self._require_spec()
+        markers = engine.compute_section_markers(spec)
+        if not 0 <= section_index < len(markers):
+            raise IndexError(f"section {section_index} out of range")
+        tempo = spec.get("tempo") or engine.PROFILES[spec["profile"]]["tempo"]
+        ppq = spec.get("ppq", 480)
+        sec_per_tick = 60.0 / (tempo * ppq)
+        sr = self._preview_sr
+        head = int(round(self._preview_offset * sr))     # count-in prepended to buf
+        start_tick = markers[section_index][0]
+        start_s = head + int(round(start_tick * sec_per_tick * sr))
+        if section_index + 1 < len(markers):
+            end_s = head + int(round(markers[section_index + 1][0] * sec_per_tick * sr))
+        else:
+            end_s = self._preview_buf.shape[0]           # last section -> incl. tail
+        clip = self._preview_buf[start_s:end_s]
+        self._preview_offset = 0.0                       # the slice has no count-in
+        self._play_base = start_tick * sec_per_tick      # playhead offset back to grid
+        if self._player is None:
+            self._player = playback.Player()
+        self._player.load(clip, sr)
         self._player.play()
 
     def play(self, *, with_context=False):
@@ -656,6 +695,7 @@ class Controller:
             if self._spec is None:
                 raise ValueError("nothing to play: no rendered preview and no spec")
             self.render_preview(with_context=with_context)
+        self._play_base = 0.0                        # full song starts at musical 0
         if self._player is None:
             self._player = playback.Player()
         self._player.load(self._preview_buf, self._preview_sr)
