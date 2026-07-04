@@ -240,11 +240,16 @@ class Controller:
     # ------------------------------------------------------------------
     # Spec construction
     # ------------------------------------------------------------------
-    def song_from_profile(self, profile_name, overrides=None):
-        """Build a default-arrangement spec for a profile; store as current."""
-        self._spec = engine.song_from_profile(profile_name, overrides)
+    def song_from_profile(self, profile_name, overrides=None, era=None):
+        """Build a default-arrangement spec for a profile (optionally an era);
+        store as current."""
+        self._spec = engine.song_from_profile(profile_name, overrides, era=era)
         self._reset_history()
         return self._spec
+
+    def list_profile_eras(self, profile_name):
+        """Selectable era labels for a profile (empty list for flat profiles)."""
+        return [b["label"] for b in engine.PROFILES.get(profile_name, {}).get("eras", [])]
 
     def build_spec_from_ui_state(self, profile, *, axes=None, sections=None,
                                  tempo=None, ppq=480):
@@ -342,7 +347,7 @@ class Controller:
         these as each section's INHERITED baseline (so barker reads high ghost,
         mxpx low), and only writes a per-section override for axes moved off it."""
         spec = self._require_spec()
-        prof = engine.PROFILES[spec["profile"]]
+        prof = engine.profile_view(spec["profile"], spec.get("era"))   # era-aware
         ov = spec.get("overrides", {})
         from engine.generate import _AXIS_KEYS
         return {k: float(ov.get(k, prof.get(k, 0.0))) for k in _AXIS_KEYS}

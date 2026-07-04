@@ -280,13 +280,92 @@ FILLS = {
 # Defaulted axes (ghost/ornament/double_bass/syncopation/breakdown/fill_prob/
 # humanize) fall back to 0 / sensible values when omitted.
 # ---------------------------------------------------------------------------
-def _p(era, tempo, verse, chorus, bridge, intro, fills, **axes):
+def _p(era, tempo, verse, chorus, bridge, intro, fills, eras=None, **axes):
     d = {"era": era, "tempo": tempo, "verse": verse, "chorus": chorus,
          "bridge": bridge, "intro": intro, "fills": fills,
          "ghost": 0.5, "ornament": 0.4, "double_bass": 0.0, "syncopation": 0.0,
-         "breakdown": 0.0, "fill_prob": 0.75, "humanize": 1.0}
+         "breakdown": 0.0, "fill_prob": 0.75, "humanize": 1.0,
+         "eras": list(eras) if eras else []}
     d.update(axes)
     return d
+
+
+def _era(label, tempo, verse, chorus, bridge, intro, fills, **axes):
+    """One selectable era-block for a profile. Pools are REQUIRED-COMPLETE (no
+    partial fallback); only the axis keys that DIFFER from the flat profile need
+    be given (the rest inherit via ``profile_view``)."""
+    d = {"label": label, "tempo": tempo, "verse": verse, "chorus": chorus,
+         "bridge": bridge, "intro": intro, "fills": fills}
+    d.update(axes)
+    return d
+
+
+# --- Artist era-blocks (DRAFT musical values — owner refines per era) ----------
+# Pools are complete per era; only axes that differ from the flat profile are set.
+_GREEN_DAY_ERAS = [
+    _era("Dookie–Nimrod (94–97)", 182,
+         ["skank", "two_step", "verse_basic", "ramones_buzzsaw"],
+         ["chorus_crash", "chorus_open_hat"],
+         ["halftime", "longview_tom"], ["verse_basic", "longview_tom"],
+         ["tom_descend", "marching_toms", "triplet_snare", "sparse_tom"],
+         ghost=0.4, ornament=0.4, fill_prob=0.8),
+    _era("Warning (2000)", 150,
+         ["verse_basic", "surf", "two_step"],
+         ["chorus_open_hat", "chorus_ride_bell"], ["halftime"],
+         ["verse_basic", "surf"],
+         ["sparse_tom", "tom_descend", "snare_buildup"],
+         ghost=0.3, ornament=0.5, fill_prob=0.55),
+    _era("American Idiot–21st Century Breakdown (04–09)", 160,
+         ["verse_basic", "verse_doubles", "tribal_toms", "surf"],
+         ["chorus_crash", "chorus_doublebass", "chorus_ride_bell"],
+         ["halftime", "tribal_toms", "gang_break"], ["verse_basic", "tribal_toms"],
+         ["marching_toms", "tom_descend", "tom_around", "triplet_snare"],
+         ghost=0.5, ornament=0.6, syncopation=0.3, fill_prob=0.85, humanize=0.9),
+    _era("¡Uno!–Revolution Radio (12–16)", 172,
+         ["verse_basic", "four_floor", "skank", "surf"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "two_step"],
+         ["verse_basic", "four_floor"],
+         ["tom_descend", "triplet_snare", "snare_buildup"],
+         ghost=0.4, ornament=0.4, fill_prob=0.7),
+    _era("Father of All (2020)", 156,
+         ["four_floor", "disco_punk", "two_step"],
+         ["chorus_crash", "four_floor"], ["halftime"], ["four_floor", "disco_punk"],
+         ["sparse_tom", "snare_buildup"],
+         ghost=0.3, ornament=0.3, syncopation=0.4, fill_prob=0.5, humanize=0.7),
+    _era("Saviors (2024)", 170,
+         ["verse_basic", "two_step", "skank", "longview_tom"],
+         ["chorus_crash", "chorus_ride_bell"], ["halftime", "tribal_toms"],
+         ["verse_basic", "longview_tom"],
+         ["tom_descend", "marching_toms", "triplet_snare"],
+         ghost=0.45, ornament=0.5, fill_prob=0.8, humanize=0.9),
+]
+
+_RELIENT_K_ERAS = [
+    _era("Relient K (2000) — pre-Douglas", 172,
+         ["skank", "verse_basic", "surf", "two_step"],
+         ["chorus_crash", "chorus_open_hat"], ["ska_punk", "halftime"],
+         ["verse_basic", "surf"],
+         ["snare_buildup", "tom_descend", "ramones_crash"],
+         ghost=0.3, ornament=0.3, fill_prob=0.6),
+    _era("Anatomy–Two Lefts (01–03)", 176,
+         ["verse_doubles", "skank", "surf", "two_step"],
+         ["chorus_crash", "chorus_open_hat"], ["ska_punk", "halftime"],
+         ["verse_basic", "surf"],
+         ["triplet_snare", "tom_descend", "marching_toms"],
+         ghost=0.4, ornament=0.6, syncopation=0.4, fill_prob=0.85),
+    _era("Mmhmm–Five Score (04–07)", 168,
+         ["verse_16th", "verse_doubles", "surf", "emo_syncopated"],
+         ["chorus_crash", "chorus_ride_bell", "chorus_open_hat"],
+         ["halftime", "emo_syncopated"], ["verse_basic", "surf"],
+         ["triplet_snare", "tom_descend", "linear", "marching_toms"],
+         ghost=0.5, ornament=0.7, syncopation=0.5, double_bass=0.2, fill_prob=0.85),
+    _era("Forget and Not Slow Down (2009)", 165,
+         ["verse_16th", "verse_doubles", "emo_syncopated"],
+         ["chorus_crash", "chorus_ride_bell"], ["halftime", "emo_syncopated"],
+         ["verse_basic", "emo_syncopated"],
+         ["linear", "triplet_snare", "tom_descend"],
+         ghost=0.5, ornament=0.7, syncopation=0.6, double_bass=0.2, fill_prob=0.8),
+]
 
 
 PROFILES = {
@@ -315,7 +394,8 @@ PROFILES = {
                    ["verse_basic", "ramones_buzzsaw"],
                    ["marching_toms", "tom_descend", "triplet_snare", "sparse_tom",
                     "halfbar_toms"],
-                   ghost=0.6, ornament=0.6, fill_prob=0.85),
+                   ghost=0.6, ornament=0.6, fill_prob=0.85,
+                   eras=_GREEN_DAY_ERAS),
     "offspring": _p("90s_skate", 172,
                     ["surf", "skank", "verse_basic", "two_step"],
                     ["chorus_crash", "chorus_open_hat"], ["halftime", "skank"],
@@ -395,7 +475,7 @@ PROFILES = {
                     ["triplet_snare", "tom_descend", "marching_toms", "linear",
                      "snare_buildup"],
                     ghost=0.5, ornament=0.7, syncopation=0.5, double_bass=0.2,
-                    fill_prob=0.85, humanize=1.0),
+                    fill_prob=0.85, humanize=1.0, eras=_RELIENT_K_ERAS),
 
     # --- Emo crossover ---
     "paramore": _p("emo_crossover", 164,
@@ -521,11 +601,11 @@ def _pick(pool, rng):
     return rng.choice(pool)
 
 
-def song_from_profile(profile_name, overrides=None):
+def song_from_profile(profile_name, overrides=None, era=None):
     if profile_name not in PROFILES:
         raise ValueError(f"Unknown profile '{profile_name}'. "
                          f"Options: {sorted(PROFILES)}")
-    prof = PROFILES[profile_name]
+    prof = profile_view(profile_name, era)      # era tempo/pools; flat when era=None
     ov = overrides or {}
     arrangement = [("intro", 4, False), ("verse", 8, True), ("chorus", 8, True),
                    ("verse", 8, True), ("chorus", 8, True), ("bridge", 4, True),
@@ -542,9 +622,12 @@ def song_from_profile(profile_name, overrides=None):
     # "fill into silence" (the audible "goes off the rails at the end"). End on the
     # groove instead.
     sections[-1].pop("fill_at_end", None)
-    return {"ppq": 480, "profile": profile_name,
+    spec = {"ppq": 480, "profile": profile_name,
             "tempo": ov.get("tempo", prof["tempo"]),
             "overrides": ov, "sections": sections}
+    if era:
+        spec["era"] = era          # only writer of spec['era']; tempo co-written above
+    return spec
 
 
 def _resolve_groove(sec, prof, rng, breakdown=0.0):
@@ -637,6 +720,26 @@ def _bar_override(sec, b):
 _FEEL = {"normal": (1, 1), "half": (2, 1), "double": (1, 2)}
 
 
+def profile_view(profile_name, era=None):
+    """Effective profile dict for a spec: the selected era-block merged over the
+    flat profile, or the flat profile itself when no era is chosen.
+
+    `era=None` (or an unknown/absent era) returns the flat `PROFILES` object
+    UNCHANGED — the byte-identity guarantee for the default path. An era returns a
+    NEW merged dict (never mutates `PROFILES`): the era-block's complete pools +
+    tempo + any axes it overrides, with unspecified axes inheriting the flat
+    profile."""
+    prof = PROFILES.get(profile_name, PROFILES["pop_punk"])
+    if not era:
+        return prof
+    block = next((b for b in prof.get("eras", []) if b.get("label") == era), None)
+    if block is None:
+        return prof
+    view = dict(prof)
+    view.update(block)              # era pools (complete) + tempo + overridden axes
+    return view
+
+
 def _iter_bars(spec, rng, omap):
     """Drive the full per-section / per-bar resolution off a single rng stream.
 
@@ -648,7 +751,7 @@ def _iter_bars(spec, rng, omap):
     """
     ppq = spec.get("ppq", 480)
     step_ticks = ppq // (STEPS // 4)
-    prof = PROFILES.get(spec.get("profile", "pop_punk"), PROFILES["pop_punk"])
+    prof = profile_view(spec.get("profile", "pop_punk"), spec.get("era"))
     ov = spec.get("overrides", {})
     A = lambda k: ov.get(k, prof.get(k))
     glob = {"ghost": A("ghost"), "ornament": A("ornament"),
@@ -835,9 +938,11 @@ def _parse_doc_descriptions(path=_DOCS_PATH):
 
 
 def list_profiles():
-    """[{name, era, tempo, axes:{...7...}}] in definition order."""
+    """[{name, era, tempo, axes:{...7...}, eras:[labels]}] in definition order.
+    `eras` is the selectable era labels (empty for flat profiles)."""
     return [{"name": n, "era": p["era"], "tempo": p["tempo"],
-             "axes": {k: p[k] for k in _AXIS_KEYS}}
+             "axes": {k: p[k] for k in _AXIS_KEYS},
+             "eras": [b["label"] for b in p.get("eras", [])]}
             for n, p in PROFILES.items()]
 
 

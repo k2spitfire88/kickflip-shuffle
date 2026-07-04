@@ -108,6 +108,14 @@ class GenerateView(QWidget):
         right.addWidget(title)
 
         controls = QHBoxLayout()
+        self.era_label = QLabel("Era")
+        self.era_combo = QComboBox()
+        self.era_combo.setToolTip("Pick an era of this drummer's style.")
+        self.era_combo.currentIndexChanged.connect(self._on_era_changed)
+        self.era_label.setVisible(False)              # shown when a profile has eras
+        self.era_combo.setVisible(False)
+        controls.addWidget(self.era_label)
+        controls.addWidget(self.era_combo)
         controls.addWidget(QLabel("BPM"))
         self.bpm = QSpinBox()
         self.bpm.setRange(40, 300)          # before any setValue (Qt default max=99)
@@ -247,8 +255,35 @@ class GenerateView(QWidget):
         if current is None:
             return
         name = current.data(Qt.UserRole)
+        self._populate_eras(name, select=None)        # default era (flat) on switch
         self._c.song_from_profile(name)
         self._refresh_from_spec()
+
+    def _populate_eras(self, profile, *, select):
+        """Fill the era combo for `profile` (hidden for flat profiles). `select` is
+        the era label to preselect, or None for '— default —'. Signal-blocked."""
+        eras = self._c.list_profile_eras(profile)
+        self.era_combo.blockSignals(True)
+        self.era_combo.clear()
+        self.era_combo.addItem("— default —", None)
+        for label in eras:
+            self.era_combo.addItem(label, label)
+        idx = self.era_combo.findData(select) if select else 0
+        self.era_combo.setCurrentIndex(max(0, idx))
+        self.era_combo.blockSignals(False)
+        has = bool(eras)
+        self.era_combo.setVisible(has)
+        self.era_label.setVisible(has)
+
+    def _on_era_changed(self, _index):
+        item = self.profiles.currentItem()
+        if item is None:
+            return
+        profile = item.data(Qt.UserRole)
+        era = self.era_combo.currentData()
+        self._c.song_from_profile(profile, era=era)   # era switch = new document
+        self._refresh_from_spec()
+        self.status.emit(f"Era: {era or 'default'}.")
 
     def _on_variations(self):
         if self._c.spec is None:
@@ -519,6 +554,16 @@ class GenerateView(QWidget):
                 self.profiles.setCurrentRow(i)
                 break
         self.profiles.blockSignals(False)
+        self._populate_eras(spec.get("profile"), select=spec.get("era"))  # restore era
+        # Reconcile a stale era (e.g. a .ppd whose era label no longer exists): the
+        # combo fell back to '— default —', so make the spec agree (it already
+        # renders flat via profile_view's fallback).
+        resolved_era = self.era_combo.currentData()
+        if resolved_era != spec.get("era"):
+            if resolved_era is None:
+                spec.pop("era", None)
+            else:
+                spec["era"] = resolved_era
         self._refresh_from_spec(selected_section)
 
     def _select_section(self, index):
