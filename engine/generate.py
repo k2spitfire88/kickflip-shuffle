@@ -540,6 +540,39 @@ _BARKER_ERAS = [
          ghost=0.95, ornament=0.95, syncopation=0.3, fill_prob=0.95, humanize=0.85),
 ]
 
+# Good Charlotte — Wilson (00–05) then Butterworth (05–present); the big style
+# breaks are album-driven (Chronicles theatrical, Revival dance-punk pivot).
+_GOOD_CHARLOTTE_ERAS = [
+    # 1) Breakout: bright fast anthemic pop-punk.
+    _era("Breakout (00–03)", (150, 190),               # The Anthem 160 / Lifestyles 150
+         ["verse_basic", "verse_doubles", "skank", "two_step"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "skank"],
+         ["verse_basic", "verse_doubles"],
+         ["snare_buildup", "tom_descend", "triplet_snare"],
+         ghost=0.5, ornament=0.5, fill_prob=0.75),
+    # 2) Chronicles: darker, theatrical, orchestral edge.
+    _era("Chronicles (04)", (140, 185),                # I Just Wanna Live 165 / Predictable
+         ["verse_basic", "verse_doubles", "tribal_toms", "marching"],
+         ["chorus_crash", "chorus_ride_bell"], ["halftime", "tribal_toms"],
+         ["verse_basic", "marching"],
+         ["tom_descend", "marching_toms", "tom_around", "triplet_snare"],
+         ghost=0.55, ornament=0.6, syncopation=0.3, fill_prob=0.8, humanize=0.9),
+    # 3) Revival: dance-punk/electro pivot, four-floor.
+    _era("Revival (07)", (120, 170),                   # Dance Floor Anthem 130 / The River
+         ["four_floor", "disco_punk", "verse_basic", "trap_hat_modern"],
+         ["chorus_crash", "chorus_doublebass"], ["halftime", "disco_punk"],
+         ["four_floor", "disco_punk"],
+         ["snare_buildup", "tom_descend", "triplet_snare"],
+         ghost=0.4, ornament=0.45, syncopation=0.4, fill_prob=0.65),
+    # 4) Modern: back-to-roots (Cardiology) then moody modern (Generation Rx).
+    _era("Modern (10–18)", (125, 180),                 # Like It's Her Birthday / Generation Rx
+         ["verse_basic", "verse_doubles", "four_floor", "emo_syncopated"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "emo_syncopated"],
+         ["verse_basic", "four_floor"],
+         ["tom_descend", "triplet_snare", "snare_buildup"],
+         ghost=0.5, ornament=0.5, fill_prob=0.75, humanize=0.9),
+]
+
 
 PROFILES = {
     # --- Generic / broad default ---
@@ -604,7 +637,8 @@ PROFILES = {
                          ["chorus_crash", "four_floor"], ["halftime"],
                          ["verse_basic", "four_floor"],
                          ["snare_buildup", "tom_descend"],
-                         ghost=0.4, ornament=0.3, syncopation=0.2, fill_prob=0.7),
+                         ghost=0.4, ornament=0.3, syncopation=0.2, fill_prob=0.7,
+                         eras=_GOOD_CHARLOTTE_ERAS),
     "simple_plan": _p("2000s_mall", 162,
                       ["verse_basic", "surf", "four_floor"],
                       ["chorus_crash", "chorus_open_hat"], ["halftime"],
