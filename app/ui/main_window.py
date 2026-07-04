@@ -7,7 +7,7 @@ crashes the window.
 """
 from pathlib import Path
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QIcon, QPixmap, QAction, QActionGroup, QKeySequence
 from PySide6.QtWidgets import (
     QMainWindow, QMessageBox, QWidget, QHBoxLayout, QListWidget, QStackedWidget,
@@ -40,8 +40,11 @@ class MainWindow(QMainWindow):
         central = QWidget()
         root = QHBoxLayout(central)
         self.rail = QListWidget()
-        self.rail.setFixedWidth(120)
+        self.rail.setFixedWidth(140)
+        self.rail.setSpacing(2)
         self.rail.addItems(["Generate", "Drop audio", "Browser"])
+        for i in range(self.rail.count()):
+            self.rail.item(i).setSizeHint(QSize(0, 34))   # avoid clipped/overlapping rows
         self.rail.setCurrentRow(0)
         root.addWidget(self.rail)
 

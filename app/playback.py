@@ -198,12 +198,18 @@ class Player:
                 samplerate=self._sr, channels=2, callback=self._callback)
 
     def play(self):
-        self._ensure_stream()
         with self._lock:
             if self._cursor >= len(self._buffer):
                 self._cursor = 0
-        if not self._stream.active:
-            self._stream.start()
+        # A stream that finished (raised CallbackStop at the end) or was aborted
+        # (stop/pause) cannot be reliably resumed with .start() — PortAudio treats
+        # the callback as done. Rebuild a fresh stream so every Play works, not
+        # just the first.
+        if self._stream is not None and not self._stream.active:
+            self._stream.close()
+            self._stream = None
+        self._ensure_stream()
+        self._stream.start()
 
     def pause(self):
         if self._stream is not None and self._stream.active:
