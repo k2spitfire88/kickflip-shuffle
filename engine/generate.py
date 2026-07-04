@@ -136,6 +136,21 @@ GROOVES = {
                    "snare": {4: 112, 12: 112},
                    "kick": {0: 106, 4: 100, 8: 106, 12: 100}},
 
+    # Marching / Latin backbeat (Green Day "Holiday" / "American Idiot" bridge)
+    "marching": {"hat": _hat8(80, 92),
+                 "snare": {2: 42, 4: 110, 6: 44, 10: 42, 12: 110, 14: 46, 15: 40},
+                 "kick": {0: 106, 8: 104},
+                 "tom_floor": {7: 84, 15: 84}},
+    # Garage/Motown stomp (Green Day "Father of All" era) — big loose backbeat
+    "garage_stomp": {"hat_open": {2: 92, 6: 92, 10: 92, 14: 92},
+                     "snare": {4: 116, 12: 116},
+                     "kick": {0: 108, 4: 92, 8: 108, 12: 92}},
+    # Linear tom-weave (Dave Douglas-style busy syncopated groove/fill feel)
+    "linear_tom": {"hat": _hat16(64, 88),
+                   "snare": {4: 104, 10: 58, 12: 104},
+                   "kick": {0: 104, 3: 90, 8: 100, 11: 90},
+                   "tom_mid": {6: 82, 14: 82}, "tom_low": {7: 80, 15: 80}},
+
     # Tom-driven (Paramore "Decode" / "Brick by Boring Brick")
     "tribal_toms": {"tom_floor": {0: 108, 8: 108}, "tom_low": {4: 100, 12: 100},
                     "snare": {12: 110}, "hat_open": {6: 84, 14: 84},
@@ -302,69 +317,78 @@ def _era(label, tempo, verse, chorus, bridge, intro, fills, **axes):
 
 # --- Artist era-blocks (DRAFT musical values — owner refines per era) ----------
 # Pools are complete per era; only axes that differ from the flat profile are set.
+# Tempo is a (lo, hi) RANGE per era (real songs span one); the default is the
+# midpoint and Regenerate re-rolls within it.
 _GREEN_DAY_ERAS = [
-    _era("Dookie–Nimrod (94–97)", 182,
-         ["skank", "two_step", "verse_basic", "ramones_buzzsaw"],
+    _era("Dookie–Nimrod (94–97)", (143, 180),         # Basket Case 170 / Longview 143
+         ["verse_basic", "skank", "two_step", "ramones_buzzsaw", "longview_tom"],
          ["chorus_crash", "chorus_open_hat"],
          ["halftime", "longview_tom"], ["verse_basic", "longview_tom"],
-         ["tom_descend", "marching_toms", "triplet_snare", "sparse_tom"],
+         ["tom_descend", "triplet_snare", "marching_toms", "sparse_tom"],
          ghost=0.4, ornament=0.4, fill_prob=0.8),
-    _era("Warning (2000)", 150,
-         ["verse_basic", "surf", "two_step"],
+    _era("Warning (2000)", (130, 150),                # Minority 138
+         ["verse_basic", "surf", "two_step", "four_floor"],
          ["chorus_open_hat", "chorus_ride_bell"], ["halftime"],
          ["verse_basic", "surf"],
-         ["sparse_tom", "tom_descend", "snare_buildup"],
-         ghost=0.3, ornament=0.5, fill_prob=0.55),
-    _era("American Idiot–21st Century Breakdown (04–09)", 160,
-         ["verse_basic", "verse_doubles", "tribal_toms", "surf"],
+         ["sparse_tom", "snare_buildup", "tom_descend"],
+         ghost=0.3, ornament=0.45, fill_prob=0.55),
+    _era("American Idiot–21st Century Breakdown (04–09)", (90, 186),  # AI 186 / ballads
+         ["verse_basic", "verse_doubles", "tribal_toms", "marching", "ramones_buzzsaw"],
          ["chorus_crash", "chorus_doublebass", "chorus_ride_bell"],
-         ["halftime", "tribal_toms", "gang_break"], ["verse_basic", "tribal_toms"],
+         ["halftime", "tribal_toms", "marching", "gang_break"],
+         ["verse_basic", "marching"],
          ["marching_toms", "tom_descend", "tom_around", "triplet_snare"],
          ghost=0.5, ornament=0.6, syncopation=0.3, fill_prob=0.85, humanize=0.9),
-    _era("¡Uno!–Revolution Radio (12–16)", 172,
-         ["verse_basic", "four_floor", "skank", "surf"],
+    _era("¡Uno!–Revolution Radio (12–16)", (75, 150),  # Still Breathing 75 / Bang Bang 127
+         ["verse_basic", "four_floor", "skank", "surf", "ramones_buzzsaw"],
          ["chorus_crash", "chorus_open_hat"], ["halftime", "two_step"],
          ["verse_basic", "four_floor"],
          ["tom_descend", "triplet_snare", "snare_buildup"],
          ghost=0.4, ornament=0.4, fill_prob=0.7),
-    _era("Father of All (2020)", 156,
-         ["four_floor", "disco_punk", "two_step"],
-         ["chorus_crash", "four_floor"], ["halftime"], ["four_floor", "disco_punk"],
+    _era("Father of All (2020)", (130, 170),          # garage-feel, Father of All 167
+         ["garage_stomp", "four_floor", "disco_punk", "two_step"],
+         ["garage_stomp", "chorus_crash"], ["halftime", "garage_stomp"],
+         ["garage_stomp", "four_floor"],
          ["sparse_tom", "snare_buildup"],
-         ghost=0.3, ornament=0.3, syncopation=0.4, fill_prob=0.5, humanize=0.7),
-    _era("Saviors (2024)", 170,
-         ["verse_basic", "two_step", "skank", "longview_tom"],
-         ["chorus_crash", "chorus_ride_bell"], ["halftime", "tribal_toms"],
+         ghost=0.3, ornament=0.3, syncopation=0.3, fill_prob=0.5, humanize=1.0),
+    _era("Saviors (2024)", (130, 180),                # American Dream 143 / Look Ma fast
+         ["verse_basic", "two_step", "skank", "longview_tom", "ramones_buzzsaw"],
+         ["chorus_crash", "chorus_ride_bell"], ["halftime", "tribal_toms", "marching"],
          ["verse_basic", "longview_tom"],
          ["tom_descend", "marching_toms", "triplet_snare"],
-         ghost=0.45, ornament=0.5, fill_prob=0.8, humanize=0.9),
+         ghost=0.45, ornament=0.5, fill_prob=0.8, humanize=0.95),
 ]
 
 _RELIENT_K_ERAS = [
-    _era("Relient K (2000) — pre-Douglas", 172,
-         ["skank", "verse_basic", "surf", "two_step"],
+    # 1) debut — Stephen Cushman: raw, fast, simple ska-punk.
+    _era("Relient K (2000) — Cushman", (165, 195),
+         ["skank", "verse_basic", "two_step", "ramones_buzzsaw", "surf"],
          ["chorus_crash", "chorus_open_hat"], ["ska_punk", "halftime"],
          ["verse_basic", "surf"],
          ["snare_buildup", "tom_descend", "ramones_crash"],
-         ghost=0.3, ornament=0.3, fill_prob=0.6),
-    _era("Anatomy–Two Lefts (01–03)", 176,
-         ["verse_doubles", "skank", "surf", "two_step"],
+         ghost=0.25, ornament=0.3, fill_prob=0.55, humanize=1.0),
+    # 2) Anatomy–Two Lefts — Dave Douglas (early): tight ska-punk, quick fills.
+    _era("Anatomy–Two Lefts (01–03) — Douglas", (160, 180),   # Sadie Hawkins 167
+         ["skank", "ska_punk", "two_step", "verse_doubles", "surf"],
          ["chorus_crash", "chorus_open_hat"], ["ska_punk", "halftime"],
          ["verse_basic", "surf"],
          ["triplet_snare", "tom_descend", "marching_toms"],
-         ghost=0.4, ornament=0.6, syncopation=0.4, fill_prob=0.85),
-    _era("Mmhmm–Five Score (04–07)", 168,
-         ["verse_16th", "verse_doubles", "surf", "emo_syncopated"],
+         ghost=0.4, ornament=0.55, syncopation=0.35, fill_prob=0.85),
+    # 3) Mmhmm–Five Score — Douglas (mature): technical/linear, dynamic, WIDE tempo.
+    _era("Mmhmm–Five Score (04–07) — Douglas", (110, 170),    # Be My Escape 112!
+         ["verse_basic", "verse_16th", "linear_tom", "four_floor", "emo_syncopated"],
          ["chorus_crash", "chorus_ride_bell", "chorus_open_hat"],
-         ["halftime", "emo_syncopated"], ["verse_basic", "surf"],
+         ["halftime", "emo_syncopated", "linear_tom"], ["verse_basic", "surf"],
          ["triplet_snare", "tom_descend", "linear", "marching_toms"],
-         ghost=0.5, ornament=0.7, syncopation=0.5, double_bass=0.2, fill_prob=0.85),
-    _era("Forget and Not Slow Down (2009)", 165,
-         ["verse_16th", "verse_doubles", "emo_syncopated"],
-         ["chorus_crash", "chorus_ride_bell"], ["halftime", "emo_syncopated"],
-         ["verse_basic", "emo_syncopated"],
-         ["linear", "triplet_snare", "tom_descend"],
-         ghost=0.5, ornament=0.7, syncopation=0.6, double_bass=0.2, fill_prob=0.8),
+         ghost=0.55, ornament=0.7, syncopation=0.5, double_bass=0.2, fill_prob=0.85,
+         humanize=0.9),
+    # 4) FANSD — Ethan Luck: solid rock pocket, less busy than Douglas, tighter.
+    _era("Forget and Not Slow Down (2009) — Ethan Luck", (140, 170),  # FANSD 167
+         ["verse_basic", "verse_doubles", "four_floor", "two_step"],
+         ["chorus_crash", "chorus_ride_bell"], ["halftime", "breakdown_chug"],
+         ["verse_basic", "four_floor"],
+         ["triplet_snare", "tom_descend", "snare_buildup"],
+         ghost=0.4, ornament=0.45, syncopation=0.3, fill_prob=0.7, humanize=0.9),
 ]
 
 
@@ -622,11 +646,22 @@ def song_from_profile(profile_name, overrides=None, era=None):
     # "fill into silence" (the audible "goes off the rails at the end"). End on the
     # groove instead.
     sections[-1].pop("fill_at_end", None)
+    # An era may carry a (lo, hi) tempo RANGE (real songs span one); default to the
+    # midpoint and remember the range so `regenerate` can re-roll within it. A flat
+    # profile keeps a single int tempo.
+    base_tempo = prof["tempo"]
+    tempo_range = None
+    if isinstance(base_tempo, (tuple, list)):
+        lo, hi = int(base_tempo[0]), int(base_tempo[1])
+        tempo_range = [lo, hi]
+        base_tempo = (lo + hi) // 2
     spec = {"ppq": 480, "profile": profile_name,
-            "tempo": ov.get("tempo", prof["tempo"]),
+            "tempo": ov.get("tempo", base_tempo),
             "overrides": ov, "sections": sections}
     if era:
         spec["era"] = era          # only writer of spec['era']; tempo co-written above
+    if tempo_range:
+        spec["tempo_range"] = tempo_range
     return spec
 
 
@@ -972,20 +1007,23 @@ def groove_usage():
     usage = {n: {"roles": set(), "profiles": [], "eras": set()}
              for n in list(GROOVES) + list(FILLS)}
     for pname, prof in PROFILES.items():
-        era = prof["era"]
-        for role in _GROOVE_ROLE_KEYS:
-            for gname in prof.get(role, []):
-                u = usage[gname]
-                u["roles"].add(role)
-                u["eras"].add(era)
+        # Scan the flat profile AND every era-block, so era-only grooves count.
+        holders = [(prof["era"], prof)]
+        holders += [(b.get("label", prof["era"]), b) for b in prof.get("eras", [])]
+        for tag, holder in holders:
+            for role in _GROOVE_ROLE_KEYS:
+                for gname in holder.get(role, []):
+                    u = usage[gname]
+                    u["roles"].add(role)
+                    u["eras"].add(tag)
+                    if pname not in u["profiles"]:
+                        u["profiles"].append(pname)
+            for fname in holder.get("fills", []):
+                u = usage[fname]
+                u["roles"].add("fill")
+                u["eras"].add(tag)
                 if pname not in u["profiles"]:
                     u["profiles"].append(pname)
-        for fname in prof.get("fills", []):
-            u = usage[fname]
-            u["roles"].add("fill")
-            u["eras"].add(era)
-            if pname not in u["profiles"]:
-                u["profiles"].append(pname)
     order = {n: i for i, n in enumerate(_GROOVE_ROLE_KEYS + ("fill",))}
     return {n: {"roles": sorted(u["roles"], key=lambda r: order[r]),
                 "profiles": u["profiles"],

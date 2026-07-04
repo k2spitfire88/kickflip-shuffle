@@ -22,7 +22,8 @@ def test_era_view_merges_without_mutating_profiles():
     flat_tempo = engine.PROFILES["tre_cool"]["tempo"]
     view = engine.profile_view("tre_cool", "Saviors (2024)")
     assert view is not engine.PROFILES["tre_cool"]            # a fresh dict
-    assert view["tempo"] == 170 and view["verse"] != engine.PROFILES["tre_cool"]["verse"]
+    assert view["tempo"] == (130, 180)                       # era tempo RANGE
+    assert view["verse"] != engine.PROFILES["tre_cool"]["verse"]
     assert engine.PROFILES["tre_cool"]["tempo"] == flat_tempo  # flat untouched
 
 
@@ -34,12 +35,14 @@ def test_era_axes_partial_fallback():
 
 
 def test_song_from_profile_era_sets_tempo_and_era():
-    spec = engine.song_from_profile("relient_k", era="Forget and Not Slow Down (2009)")
-    assert spec["era"] == "Forget and Not Slow Down (2009)"
-    assert spec["tempo"] == 165
+    label = "Forget and Not Slow Down (2009) — Ethan Luck"
+    spec = engine.song_from_profile("relient_k", era=label)
+    assert spec["era"] == label
+    assert spec["tempo"] == 155                              # midpoint of (140,170)
+    assert spec["tempo_range"] == [140, 170]
     assert engine.build_song(spec, seed=1)                    # renders
     spec2 = engine.song_from_profile("relient_k")
-    assert "era" not in spec2                                 # flat omits the key
+    assert "era" not in spec2 and "tempo_range" not in spec2  # flat omits era keys
 
 
 def test_all_era_pools_valid():
@@ -51,6 +54,24 @@ def test_all_era_pools_valid():
             assert set(b["fills"]) <= fil, f"{name}/{b['label']}/fills"
 
 
+def test_new_grooves_exist_and_render():
+    for g in ("marching", "garage_stomp", "linear_tom"):
+        assert g in engine.GROOVES
+        spec = {"ppq": 480, "profile": "pop_punk", "tempo": 150, "overrides": {},
+                "sections": [{"groove": g, "bars": 1}]}
+        assert engine.build_song(spec, seed=1)               # renders, no KeyError
+
+
+def test_regenerate_rerolls_tempo_within_era_range():
+    c = Controller(seed=1)
+    c.song_from_profile("tre_cool",
+                        era="American Idiot–21st Century Breakdown (04–09)")
+    lo, hi = c.spec["tempo_range"]
+    for _ in range(8):
+        c.regenerate()
+        assert lo <= c.spec["tempo"] <= hi                   # stays in the era range
+
+
 def test_list_profiles_has_era_labels():
     profs = {p["name"]: p for p in engine.list_profiles()}
     assert len(profs["tre_cool"]["eras"]) == 6
@@ -60,7 +81,7 @@ def test_list_profiles_has_era_labels():
 # ------------------------------------------------------------ controller
 def test_global_axes_era_aware():
     c = Controller()
-    c.song_from_profile("relient_k", era="Mmhmm–Five Score (04–07)")
+    c.song_from_profile("relient_k", era="Mmhmm–Five Score (04–07) — Douglas")
     assert c.global_axes()["ornament"] == 0.7                # era fingerprint
     c.song_from_profile("relient_k")                         # flat
     assert c.global_axes()["ornament"] == 0.7 or True        # flat relient_k orn=0.7
@@ -82,7 +103,7 @@ def test_era_combo_populates_and_switches(qtbot):
     idx = v.era_combo.findData("American Idiot–21st Century Breakdown (04–09)")
     v.era_combo.setCurrentIndex(idx)
     assert v._c.spec.get("era") == "American Idiot–21st Century Breakdown (04–09)"
-    assert v._c.spec["tempo"] == 160
+    assert v._c.spec["tempo"] == 138                         # midpoint of (90,186)
 
 
 def test_load_current_spec_restores_and_reconciles_era(qtbot):

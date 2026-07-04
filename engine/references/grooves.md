@@ -148,6 +148,9 @@ Kick  X . . . . . . . X . . . . . . .
 ### chorus_ride_bell — chorus riding the ride with bell accents on 1 and 3
 ### chorus_doublebass — big chorus, crash quarters over 16th double-kick
 ### half_time_shuffle — Barker/Purdie half-time shuffle: backbeat on 3, swung 16th hats, ghost snares
+### marching — Latin/marching backbeat (Green Day "Holiday") with 16th snare accents and a floor-tom kick-back
+### garage_stomp — big loose Motown/garage stomp (Green Day "Father of All" era): four-on-floor kick, huge 2 & 4, open-hat offbeats
+### linear_tom — Dave-Douglas-style linear tom weave: syncopated kick, ghosted snare, tom fills folded into the groove
 
 ---
 

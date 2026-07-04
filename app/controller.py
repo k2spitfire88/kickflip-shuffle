@@ -365,8 +365,14 @@ class Controller:
         (frozen-at-lock) groove so they keep their part; unlocked sections re-roll.
         Returns the new events. NOTE: a reroll changes the seed, which the
         spec-only undo stack (6b) does not capture — regenerate is not undoable
-        (matches the pre-8e behaviour)."""
-        self.new_seed()
+        (matches the pre-8e behaviour). If the spec carries an era `tempo_range`,
+        the tempo also re-rolls within that range off the new seed (real songs in
+        an era span a tempo range)."""
+        seed = self.new_seed()
+        rng = self._spec.get("tempo_range") if self._spec else None
+        if rng:
+            lo, hi = int(rng[0]), int(rng[1])
+            self._spec["tempo"] = random.Random(seed).randint(lo, hi)   # int, like midpoint
         return self.generate()
 
     def resolved_bar(self, section_index, bar_index, *, spec=None, seed=None):
