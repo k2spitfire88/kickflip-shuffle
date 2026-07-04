@@ -490,6 +490,56 @@ _MXPX_ERAS = [
          ghost=0.4, ornament=0.45, fill_prob=0.75, humanize=0.95),
 ]
 
+# Travis Barker — marquee/busiest profile. Eras span blink-182 + side projects;
+# the half-time shuffle (app namesake) leans heaviest in Untitled + Crossover.
+# Reunion splits by lineup: Tom-reunion (Neighborhoods) / Skiba (California,Nine)
+# / Tom-returns (One More Time).
+_BARKER_ERAS = [
+    # 1) Enema: fast melodic skate-punk, signature ghost/hat work + flashy fills.
+    _era("Enema (97–01)", (150, 200),                  # What's My Age 160 / First Date 170
+         ["verse_16th", "verse_doubles", "verse_ride", "two_step"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "skank"],
+         ["verse_doubles", "verse_16th"],
+         ["triplet_snare", "tom_descend", "snare_buildup", "marching_toms"],
+         ghost=0.9, ornament=0.9, fill_prob=0.9),
+    # 2) Untitled: moody/atmospheric, halftime, complex, linear.
+    _era("Untitled (03–04)", (90, 170),                # I Miss You halftime / Feeling This
+         ["verse_16th", "emo_syncopated", "linear_tom", "half_time_shuffle"],
+         ["chorus_crash", "chorus_ride_bell"], ["half_time_shuffle", "halftime"],
+         ["emo_syncopated", "linear_tom"],
+         ["linear", "halfbar_toms", "marching_toms", "tom_around"],
+         ghost=1.0, ornament=1.0, syncopation=0.5, fill_prob=0.85, humanize=0.85),
+    # 3) Crossover: +44/Transplants/hip-hop — programmed-tight, peak shuffle.
+    _era("Crossover (05–10)", (100, 185),              # +44 / Transplants / DJ AM collabs
+         ["half_time_shuffle", "linear_tom", "disco_punk", "four_floor",
+          "trap_hat_modern"],
+         ["chorus_crash", "chorus_doublebass"], ["half_time_shuffle", "breakdown_chug"],
+         ["disco_punk", "half_time_shuffle"],
+         ["linear", "triplet_snare", "tom_around"],
+         ghost=1.0, ornament=1.0, syncopation=0.7, fill_prob=0.9, humanize=0.8),
+    # 4) Reunion: Neighborhoods, Dogs Eating Dogs (Tom) — mature, atmospheric+busy.
+    _era("Reunion (11–13)", (140, 190),                # Up All Night / After Midnight
+         ["verse_16th", "verse_doubles", "emo_syncopated", "half_time_shuffle"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "half_time_shuffle"],
+         ["verse_doubles", "emo_syncopated"],
+         ["triplet_snare", "marching_toms", "halfbar_toms", "tom_around"],
+         ghost=0.95, ornament=0.95, syncopation=0.4, fill_prob=0.95),
+    # 5) California: California, Nine (Skiba) — poppier, tighter, polished modern.
+    _era("California (16–19)", (150, 200),             # Bored to Death / She's Out of Her Mind
+         ["verse_16th", "verse_doubles", "verse_ride", "two_step"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "skank"],
+         ["verse_doubles", "verse_16th"],
+         ["triplet_snare", "tom_descend", "snare_buildup"],
+         ghost=0.9, ornament=0.9, fill_prob=0.9, humanize=0.85),
+    # 6) One More Time: Tom returns — nostalgic return-to-roots, classic+mature mix.
+    _era("One More Time (2023)", (150, 200),           # One More Time / Edging
+         ["verse_16th", "verse_doubles", "verse_ride", "half_time_shuffle"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "half_time_shuffle"],
+         ["verse_doubles", "verse_16th"],
+         ["triplet_snare", "tom_descend", "marching_toms", "halfbar_toms"],
+         ghost=0.95, ornament=0.95, syncopation=0.3, fill_prob=0.95, humanize=0.85),
+]
+
 
 PROFILES = {
     # --- Generic / broad default ---
@@ -547,7 +597,8 @@ PROFILES = {
                  ["verse_doubles", "verse_16th"],
                  ["triplet_snare", "tom_descend", "marching_toms", "snare_buildup",
                   "halfbar_toms"],
-                 ghost=1.0, ornament=1.0, fill_prob=0.95, humanize=0.8),
+                 ghost=1.0, ornament=1.0, fill_prob=0.95, humanize=0.8,
+                 eras=_BARKER_ERAS),
     "good_charlotte": _p("2000s_mall", 158,
                          ["verse_basic", "four_floor", "verse_basic"],
                          ["chorus_crash", "four_floor"], ["halftime"],
