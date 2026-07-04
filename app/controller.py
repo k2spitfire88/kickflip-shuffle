@@ -401,7 +401,9 @@ class Controller:
             tempo = engine.PROFILES[spec["profile"]]["tempo"]
         ppq = spec.get("ppq", 480)
         events = engine.build_song(spec, seed=s, output_map=omap)
-        return engine.write_midi(events, out_path, tempo=tempo, ppq=ppq)
+        markers = engine.compute_section_markers(spec)   # DAW-timeline section markers
+        return engine.write_midi(events, out_path, tempo=tempo, ppq=ppq,
+                                 markers=markers)
 
     # ------------------------------------------------------------------
     # Persistence (.ppd = JSON song spec + seed/output_map + UI extras)

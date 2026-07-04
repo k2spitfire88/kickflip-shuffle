@@ -714,23 +714,49 @@ def resolved_bar(spec, section_index, bar_index, seed=None, output_map=None):
     raise IndexError(f"bar {target} not produced")  # pragma: no cover
 
 
-def write_midi(events, out_path, tempo=170, ppq=480):
+def compute_section_markers(spec):
+    """`[(tick, label)]` at each section's start, for DAW-timeline markers. Label =
+    section ``label`` -> ``role`` -> ``groove`` -> ``"section N"``. Purely
+    positional (mirrors ``_iter_bars`` bar math); does NOT affect ``build_song``
+    output — markers are written only when passed to ``write_midi``."""
+    ppq = spec.get("ppq", 480)
+    step_ticks = ppq // (STEPS // 4)
+    bar_ticks = STEPS * step_ticks
+    markers = []
+    bar_index = 0
+    for i, sec in enumerate(spec.get("sections", [])):
+        label = (sec.get("label") or sec.get("role") or sec.get("groove")
+                 or f"section {i + 1}")
+        markers.append((bar_index * bar_ticks, str(label)))
+        bar_index += int(sec.get("bars", 4))
+    return markers
+
+
+def write_midi(events, out_path, tempo=170, ppq=480, markers=None):
     mid = mido.MidiFile(ticks_per_beat=ppq)
     track = mido.MidiTrack()
     mid.tracks.append(track)
     track.append(mido.MetaMessage("set_tempo", tempo=mido.bpm2tempo(tempo), time=0))
     track.append(mido.MetaMessage("track_name", name="Pop-Punk Drums", time=0))
+    # (tick, priority, kind, a, b): priority orders same-tick events — markers (−1)
+    # then note-offs (0) then note-ons (1), preserving the original off-before-on
+    # ordering so the default (markers=None) output stays byte-identical.
     timeline = []
     for t, note, vel, dur in events:
-        timeline.append((t, "on", note, vel))
-        timeline.append((t + dur, "off", note, 0))
-    timeline.sort(key=lambda x: (x[0], 0 if x[1] == "off" else 1))
+        timeline.append((t, 1, "on", note, vel))
+        timeline.append((t + dur, 0, "off", note, 0))
+    for t, label in (markers or []):
+        timeline.append((t, -1, "marker", label, 0))
+    timeline.sort(key=lambda x: (x[0], x[1]))
     prev = 0
-    for t, kind, note, vel in timeline:
+    for t, _pri, kind, a, b in timeline:
         delta = t - prev
         prev = t
-        track.append(mido.Message("note_on" if kind == "on" else "note_off",
-                                  channel=9, note=note, velocity=vel, time=delta))
+        if kind == "marker":
+            track.append(mido.MetaMessage("marker", text=str(a), time=delta))
+        else:
+            track.append(mido.Message("note_on" if kind == "on" else "note_off",
+                                      channel=9, note=a, velocity=b, time=delta))
     mid.save(out_path)
     return out_path
 
