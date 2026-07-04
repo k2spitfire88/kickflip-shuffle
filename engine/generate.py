@@ -391,6 +391,37 @@ _RELIENT_K_ERAS = [
          ghost=0.4, ornament=0.45, syncopation=0.3, fill_prob=0.7, humanize=0.9),
 ]
 
+_RAMONES_ERAS = [
+    # 1) Tommy: foundation buzzsaw, purest + least ornamented, minimal fills.
+    _era("Buzzsaw (76–78) — Tommy", (165, 205),        # Blitzkrieg Bop 180 / Judy fast
+         ["ramones_buzzsaw", "two_step", "verse_basic"],
+         ["chorus_crash", "ramones_buzzsaw"], ["halftime"],
+         ["ramones_buzzsaw"],
+         ["ramones_crash", "tom_descend"],
+         ghost=0.05, ornament=0.1, fill_prob=0.35),
+    # 2) Marky I: harder hitter, tighter rock backbeat, more fills.
+    _era("Rock'n'Roll (78–82) — Marky I", (145, 185),  # I Wanna Be Sedated 145
+         ["ramones_buzzsaw", "two_step", "verse_basic", "verse_ride"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "surf"],
+         ["verse_basic"],
+         ["tom_around", "tom_descend", "snare_buildup"],
+         ghost=0.15, ornament=0.25, fill_prob=0.55),
+    # 3) Richie: fastest + most aggressive, hardcore-influenced.
+    _era("Hardcore (83–87) — Richie", (195, 245),      # Wart Hog blazing
+         ["ramones_buzzsaw", "dbeat", "two_step", "blast_beat"],
+         ["chorus_crash", "ramones_buzzsaw"], ["halftime", "dbeat"],
+         ["dbeat"],
+         ["dbeat_roll", "snare_buildup", "tom_descend"],
+         ghost=0.1, ornament=0.15, fill_prob=0.6),
+    # 4) Marky II: return, wider dynamics, some moody mid-tempo.
+    _era("Return (87–96) — Marky II", (135, 185),      # Pet Sematary 130-ish / Poison Heart
+         ["verse_basic", "two_step", "surf", "ramones_buzzsaw"],
+         ["chorus_crash", "chorus_ride_bell"], ["halftime", "surf"],
+         ["verse_basic", "surf"],
+         ["tom_descend", "tom_around", "ramones_crash"],
+         ghost=0.2, ornament=0.3, fill_prob=0.5),
+]
+
 
 PROFILES = {
     # --- Generic / broad default ---
@@ -408,7 +439,8 @@ PROFILES = {
                   ["chorus_crash", "ramones_buzzsaw"], ["halftime"],
                   ["ramones_buzzsaw"],
                   ["ramones_crash", "tom_descend"],
-                  ghost=0.1, ornament=0.2, fill_prob=0.5, humanize=1.0),
+                  ghost=0.1, ornament=0.2, fill_prob=0.5, humanize=1.0,
+                  eras=_RAMONES_ERAS),
 
     # --- '90s skate / melodic punk ---
     "tre_cool": _p("90s_skate", 180,
