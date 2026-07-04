@@ -124,6 +124,9 @@ class GenerateView(QWidget):
         self.regen_btn = QPushButton("Regenerate")
         self.regen_btn.clicked.connect(self._on_regenerate)
         controls.addWidget(self.regen_btn)
+        self.variations_btn = QPushButton("Variations…")
+        self.variations_btn.clicked.connect(self._on_variations)
+        controls.addWidget(self.variations_btn)
 
         controls.addWidget(QLabel("Output"))
         self.map_combo = QComboBox()
@@ -233,6 +236,23 @@ class GenerateView(QWidget):
         name = current.data(Qt.UserRole)
         self._c.song_from_profile(name)
         self._refresh_from_spec()
+
+    def _on_variations(self):
+        if self._c.spec is None:
+            return
+        from .variations import VariationsDialog
+        dlg = VariationsDialog(self._c, self)
+        dlg.keepSeed.connect(self._on_keep_variation)
+        dlg.exec()
+
+    def _on_keep_variation(self, seed):
+        self._c.set_seed(int(seed))
+        self._c.generate()
+        self._refresh_seed_label()
+        idx = self.current_section_index()
+        if idx is not None:
+            self.grid.load(idx)
+        self.status.emit(f"Kept variation (seed {seed}).")
 
     def _on_tap(self):
         """Tap-tempo: average recent inter-tap intervals -> BPM -> set via the BPM
@@ -534,5 +554,5 @@ class GenerateView(QWidget):
     def _set_controls_enabled(self, on):
         for w in (self.bpm, self.map_combo, self.regen_btn, self.play_btn,
                   self.stop_btn, self.export_btn, self.export_as_btn, self.drag_btn,
-                  self.tap_btn):
+                  self.tap_btn, self.variations_btn):
             w.setEnabled(on)

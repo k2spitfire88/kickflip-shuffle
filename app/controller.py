@@ -624,6 +624,30 @@ class Controller:
         self._preview_offset = 0.0                 # auditions have no count-in
         return buf
 
+    def render_variation(self, seed, *, sample_rate=44100):
+        """Render the CURRENT spec at an explicit `seed` to a standalone buffer,
+        WITHOUT touching held spec/seed/preview (batch-variations / A-B compare).
+        Pure (build_song + render_events) so it is safe to call off a worker
+        thread — as long as no held-state render runs concurrently. Returns the
+        stereo float32 buffer."""
+        from . import playback
+        spec = self._require_spec()
+        events = engine.build_song(spec, seed=int(seed),
+                                   output_map=engine.GENERAL_MIDI)
+        return playback.render_events(
+            events, tempo=spec.get("tempo") or engine.PROFILES[spec["profile"]]["tempo"],
+            ppq=spec.get("ppq", 480), sample_rate=sample_rate)
+
+    def play_buffer(self, buf, sample_rate=44100):
+        """Play an arbitrary pre-rendered buffer (a batch/A-B variation) through the
+        shared transport. Does not disturb the held preview buffer/offset used by
+        the main play()."""
+        from . import playback
+        if self._player is None:
+            self._player = playback.Player()
+        self._player.load(buf, sample_rate)
+        self._player.play()
+
     def play(self, *, with_context=False):
         """Play the held preview (rendering on demand from the current spec if
         none is held). Raises if there is neither a preview nor a spec."""
