@@ -606,6 +606,47 @@ _SIMPLE_PLAN_ERAS = [
          ghost=0.45, ornament=0.45, syncopation=0.3, fill_prob=0.7),
 ]
 
+# New Found Glory — easycore pioneers (Cyrus Bolooki throughout). Eras vary the
+# heaviness around NFG's double-bass/breakdown identity.
+_NFG_ERAS = [
+    # 1) Early: melodic pop-punk w/ emo edge, less breakdown.
+    _era("Early (99–00)", (160, 200),                  # Hit or Miss / Dressed to Kill
+         ["verse_doubles", "skank", "double_bass_verse"],
+         ["chorus_crash", "chorus_doublebass"], ["halftime", "skank"],
+         ["verse_doubles", "skank"],
+         ["tom_descend", "snare_buildup", "triplet_snare"],
+         ghost=0.5, ornament=0.4, double_bass=0.4, fill_prob=0.7),
+    # 2) Breakout: definitive NFG — tight pop-punk + hardcore breakdowns.
+    _era("Breakout (02–04)", (150, 195),               # My Friends Over You / All Downhill
+         ["double_bass_verse", "verse_doubles", "skank", "breakdown_chug"],
+         ["chorus_doublebass", "chorus_crash"], ["breakdown_chug", "gang_break"],
+         ["verse_doubles", "double_bass_verse"],
+         ["double_bass", "china_choke", "tom_descend"],
+         ghost=0.5, ornament=0.4, double_bass=0.7, breakdown=0.6, fill_prob=0.75),
+    # 3) Coming Home: mellow, mature, atmospheric departure.
+    _era("Coming Home (06)", (120, 170),               # It's Not Your Fault / Hold My Hand
+         ["verse_basic", "verse_ride", "surf"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "emo_syncopated"],
+         ["verse_basic", "surf"],
+         ["tom_descend", "snare_buildup", "triplet_snare"],
+         ghost=0.5, ornament=0.5, double_bass=0.15, fill_prob=0.6, humanize=0.9),
+    # 4) Comeback: fast aggressive return, Ramones-y.
+    _era("Comeback (09–11)", (165, 210),               # Listen to Your Friends / Radiosurgery
+         ["double_bass_verse", "verse_doubles", "ramones_buzzsaw", "skank"],
+         ["chorus_doublebass", "chorus_crash"], ["breakdown_chug", "halftime"],
+         ["ramones_buzzsaw", "double_bass_verse"],
+         ["double_bass", "dbeat_roll", "tom_descend"],
+         ghost=0.45, ornament=0.4, double_bass=0.6, fill_prob=0.8),
+    # 5) Later: heavy easycore return + experimental (heaviest).
+    _era("Later (14–20)", (150, 205),                  # Ready and Willing / Happy Being Miserable
+         ["double_bass_verse", "breakdown_chug", "verse_doubles", "blast_beat"],
+         ["chorus_doublebass", "chorus_crash"], ["breakdown_chug", "gang_break"],
+         ["double_bass_verse", "verse_doubles"],
+         ["double_bass", "china_choke", "blast"],
+         ghost=0.5, ornament=0.4, double_bass=0.75, breakdown=0.6, syncopation=0.3,
+         fill_prob=0.8),
+]
+
 
 PROFILES = {
     # --- Generic / broad default ---
@@ -685,7 +726,8 @@ PROFILES = {
                           ["verse_doubles", "double_bass_verse"],
                           ["double_bass", "tom_descend", "china_choke"],
                           ghost=0.5, ornament=0.4, double_bass=0.7,
-                          breakdown=0.6, fill_prob=0.85, humanize=0.85),
+                          breakdown=0.6, fill_prob=0.85, humanize=0.85,
+                          eras=_NFG_ERAS),
     "sum41": _p("2000s_mall", 188,
                 ["skank", "double_bass_verse", "dbeat", "verse_doubles"],
                 ["chorus_doublebass", "chorus_crash"],
