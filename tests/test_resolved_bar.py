@@ -26,7 +26,8 @@ SPECS = [
 
 def _rows_used(spec, seed):
     rng = random.Random(seed)
-    return [rows for _bi, rows, _ev in _iter_bars(spec, rng, engine.GENERAL_MIDI)]
+    return [rows for _si, _bi, _g, _f, rows, _ev
+            in _iter_bars(spec, rng, engine.GENERAL_MIDI)]
 
 
 @pytest.mark.parametrize("spec,seed", SPECS)

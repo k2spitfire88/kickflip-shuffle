@@ -31,7 +31,8 @@ class SectionTimeline(QWidget):
         lay.addWidget(self.list)
         btns = QHBoxLayout()
         for label, slot in (("+ Add", self._add), ("Remove", self._remove),
-                            ("◀", self._left), ("▶", self._right)):
+                            ("◀", self._left), ("▶", self._right),
+                            ("🔒 Lock", self._toggle_lock)):
             b = QPushButton(label)
             b.clicked.connect(slot)
             btns.addWidget(b)
@@ -43,7 +44,8 @@ class SectionTimeline(QWidget):
         self.list.clear()
         for s in self._c.spec["sections"]:
             role = s.get("role") or s.get("groove", "?")
-            self.list.addItem(f"{role}·{s.get('bars', 4)}")
+            lock = "🔒" if s.get("locked") else ""
+            self.list.addItem(f"{lock}{role}·{s.get('bars', 4)}")
         self.list.blockSignals(False)
 
     def _sel(self):
@@ -82,6 +84,16 @@ class SectionTimeline(QWidget):
 
     def _right(self):
         self._move(1)
+
+    def _toggle_lock(self):
+        i = self._sel()
+        if i < 0:
+            return
+        sec = self._c.spec["sections"][i]
+        self._c.set_section_locked(i, not sec.get("locked"))
+        self.refresh()
+        self.list.setCurrentRow(i)
+        self.sectionsChanged.emit()
 
 
 class SectionEditor(QWidget):
@@ -147,6 +159,10 @@ class SectionEditor(QWidget):
             sl.setValue(int(round(axes.get(k, 0.0) * 100)))
         for w in widgets:
             w.blockSignals(False)
+        # A locked section is frozen (role -> explicit groove); editing it would
+        # write a stray `role` key and corrupt the lock bookkeeping. Make the
+        # editor read-only until the user unlocks (via the timeline 🔒 button).
+        self.setEnabled(not s.get("locked"))
         self._i = index
 
     def _commit(self, *_):

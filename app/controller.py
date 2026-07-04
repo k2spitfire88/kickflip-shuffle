@@ -296,6 +296,52 @@ class Controller:
         return engine.build_song(spec, seed=self._ensure_seed(),
                                  output_map=engine.GENERAL_MIDI)
 
+    def set_section_locked(self, index, locked):
+        """Lock/unlock a section (structural-only). Locking FREEZES the section's
+        currently-resolved groove/fill by writing them explicitly, so a later
+        `regenerate` (new seed) keeps this section's part while re-rolling the
+        others — `_resolve_groove` returns an explicit groove verbatim. Unlocking
+        restores the section to its pre-lock role so it re-rolls again. Tracked
+        (undoable); a no-op if already in the requested state."""
+        spec = self._require_spec()
+        sec = spec["sections"][index]
+        if bool(locked) == bool(sec.get("locked")):
+            return spec                            # already in requested state
+        if locked:
+            pick = engine.resolved_section_grooves(
+                spec, seed=self._ensure_seed())[index]
+            self._snapshot()
+            added = []
+            if pick is not None:                   # None only for a bars=0 section
+                if "role" in sec:
+                    sec["_prelock_role"] = sec.pop("role")
+                if "groove" not in sec:
+                    added.append("groove")
+                sec["groove"] = pick["groove"]
+                if pick["fill"] and "fill" not in sec:
+                    sec["fill"] = pick["fill"]
+                    added.append("fill")
+            sec["locked"] = True
+            sec["_lock_added"] = added
+        else:
+            self._snapshot()
+            for key in sec.pop("_lock_added", []):
+                sec.pop(key, None)
+            if "_prelock_role" in sec:
+                sec["role"] = sec.pop("_prelock_role")
+            sec.pop("locked", None)
+        self._invalidate_preview()
+        return spec
+
+    def regenerate(self):
+        """Draw a new seed and re-generate. Locked sections carry an explicit
+        (frozen-at-lock) groove so they keep their part; unlocked sections re-roll.
+        Returns the new events. NOTE: a reroll changes the seed, which the
+        spec-only undo stack (6b) does not capture — regenerate is not undoable
+        (matches the pre-8e behaviour)."""
+        self.new_seed()
+        return self.generate()
+
     def resolved_bar(self, section_index, bar_index, *, spec=None, seed=None):
         """Pre-jitter pattern rows (inst -> [16 vels]) for the grid editor.
 

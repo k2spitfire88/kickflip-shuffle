@@ -636,7 +636,7 @@ def _iter_bars(spec, rng, omap):
                                                     prof["humanize"]))}
 
     bar_index = 0
-    for sec in spec["sections"]:
+    for sec_index, sec in enumerate(spec["sections"]):
         ax = _effective_axes(sec, glob)
         groove_name = _resolve_groove(sec, prof, rng, breakdown=ax["breakdown"])
         if groove_name not in GROOVES:
@@ -671,7 +671,7 @@ def _iter_bars(spec, rng, omap):
                     v = max(1, min(127, vel + vjit))
                     t = max(0, bar_start + step * step_ticks + tjit)
                     bar_events.append((t, note, v, step_ticks - 2))
-            yield bar_index, rows, bar_events
+            yield sec_index, bar_index, groove_name, fill_name, rows, bar_events
             bar_index += 1
 
 
@@ -679,7 +679,7 @@ def build_song(spec, tempo=None, seed=None, output_map=None):
     rng = random.Random(seed)
     omap = output_map if output_map is not None else GENERAL_MIDI
     events = []
-    for _bi, _rows, bar_events in _iter_bars(spec, rng, omap):
+    for *_head, bar_events in _iter_bars(spec, rng, omap):
         events.extend(bar_events)
     events.sort(key=lambda e: e[0])
     return events
@@ -708,10 +708,23 @@ def resolved_bar(spec, section_index, bar_index, seed=None, output_map=None):
     # `output_map` can never KeyError here (the param is accepted for API
     # symmetry only and does not affect rows).
     rng = random.Random(seed)
-    for bi, rows, _ev in _iter_bars(spec, rng, GENERAL_MIDI):
+    for _si, bi, _g, _f, rows, _ev in _iter_bars(spec, rng, GENERAL_MIDI):
         if bi == target:
             return rows
     raise IndexError(f"bar {target} not produced")  # pragma: no cover
+
+
+def resolved_section_grooves(spec, seed=None):
+    """`[{'groove': name, 'fill': fill_or_None}]` — the seed-resolved pick per
+    section, exactly as `build_song` renders it under `seed`. Used by section-lock
+    to pin a locked section's current choice before a reseed."""
+    rng = random.Random(seed)
+    out = [None] * len(spec.get("sections", []))     # index-aligned to sections
+    for si, _bi, groove_name, fill_name, _rows, _ev in _iter_bars(spec, rng,
+                                                                   GENERAL_MIDI):
+        if out[si] is None:                          # first bar of the section
+            out[si] = {"groove": groove_name, "fill": fill_name}
+    return out                                       # bars=0 sections stay None
 
 
 def compute_section_markers(spec):

@@ -240,10 +240,12 @@ class GenerateView(QWidget):
     def _on_regenerate(self):
         if self._c.spec is None:
             return
-        self._c.new_seed()
-        self._c.generate()
+        self._c.regenerate()                       # locked sections keep their part
         self._refresh_seed_label()
-        self.status.emit("Regenerated.")
+        idx = self.current_section_index()
+        if idx is not None:
+            self.grid.load(idx)                    # re-rolled patterns changed
+        self.status.emit("Regenerated (locked sections kept).")
 
     def _on_play(self):
         if self._thread is not None:                   # a render is already running

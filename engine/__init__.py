@@ -19,6 +19,7 @@ from .generate import (
     list_fills,
     groove_usage,
     compute_section_markers,
+    resolved_section_grooves,
     note_ladder_events,
     write_note_ladder,
 )
@@ -46,6 +47,7 @@ __all__ = [
     "list_fills",
     "groove_usage",
     "compute_section_markers",
+    "resolved_section_grooves",
     "note_ladder_events",
     "write_note_ladder",
     "GENERAL_MIDI",
