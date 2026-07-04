@@ -207,7 +207,7 @@ class GenerateView(QWidget):
         for prof in self._c.list_profiles():
             item = QListWidgetItem(self.profiles)   # parent arg already inserts it
             item.setData(Qt.UserRole, prof["name"])
-            item.setSizeHint(QSize(0, 40))
+            item.setSizeHint(QSize(0, 52))          # room for name + era (2 lines)
             self.profiles.setItemWidget(item, self._profile_row(prof))
 
     def _profile_row(self, prof):
@@ -216,9 +216,16 @@ class GenerateView(QWidget):
         # (an opaque QWidget would paint over it).
         row.setAttribute(Qt.WA_TranslucentBackground, True)
         lay = QHBoxLayout(row)
-        lay.setContentsMargins(6, 2, 6, 2)
-        label = QLabel(f"{prof['name']}\n{prof['era']}")
-        lay.addWidget(label, 1)
+        lay.setContentsMargins(8, 4, 6, 4)
+        text = QVBoxLayout()
+        text.setSpacing(0)
+        name = QLabel(prof["name"])
+        era = QLabel(prof["era"])
+        era.setObjectName("muted")                  # smaller, dimmed subtitle
+        era.setFont(theme.font_role("mono", 10))
+        text.addWidget(name)
+        text.addWidget(era)
+        lay.addLayout(text, 1)
         lay.addWidget(AxisFingerprint(prof["axes"]))
         return row
 
