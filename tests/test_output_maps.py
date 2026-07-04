@@ -23,7 +23,7 @@ def test_ezd3_same_keys_different_mapping():
 def test_list_output_maps_flags_verified():
     rows = dict((name, verified) for name, _n, verified in engine.list_output_maps())
     assert rows["GENERAL_MIDI"] is True
-    assert rows["EZ_DRUMMER_3"] is False  # values unverified until EZD3-validated
+    assert rows["EZ_DRUMMER_3"] is True   # auditioned in EZ Drummer 3 — all 17 correct
 
 
 def test_note_ladder_one_hit_per_role():

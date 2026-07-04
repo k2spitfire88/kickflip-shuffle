@@ -41,7 +41,7 @@ EZ_DRUMMER_3 = {
     "hat": 42, "hat_open": 46, "hat_pedal": 44,
     "crash": 49, "crash2": 57, "china": 52, "splash": 55, "cowbell": 56,
     "ride": 51, "ride_bell": 53,
-    "tom_hi": 48,    # UNVERIFIED: EZD3 high tom commonly 48 (GM is 50)
+    "tom_hi": 48,    # EZD3 high tom (48, vs GM 50) — verified in EZ Drummer 3
     "tom_mid": 47,
     "tom_low": 45,
     "tom_floor": 43,
@@ -54,7 +54,7 @@ OUTPUT_MAPS = {
 }
 
 # Maps whose note numbers are not yet validated against the target sampler.
-UNVERIFIED_MAPS = frozenset({"EZ_DRUMMER_3"})
+UNVERIFIED_MAPS = frozenset()   # EZ_DRUMMER_3 auditioned in EZD3 2026-07-04: all 17 correct
 
 
 def list_output_maps():
