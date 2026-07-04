@@ -124,7 +124,12 @@ class GenerateView(QWidget):
         self.tap_btn = QPushButton("Tap")
         self.tap_btn.setToolTip("Tap repeatedly to set the tempo.")
         self.tap_btn.clicked.connect(self._on_tap)
+        self.lock_tempo = QCheckBox("Lock tempo")
+        self.lock_tempo.setToolTip("Keep this BPM — Regenerate & era changes won't "
+                                   "re-roll it.")
+        self.lock_tempo.toggled.connect(self._on_lock_tempo)
         controls.addWidget(self.tap_btn)
+        controls.addWidget(self.lock_tempo)
 
         self.seed_label = QLabel("seed —")
         self.seed_label.setObjectName("muted")
@@ -276,14 +281,20 @@ class GenerateView(QWidget):
         self.era_label.setVisible(has)
 
     def _on_era_changed(self, _index):
-        item = self.profiles.currentItem()
-        if item is None:
+        if self.profiles.currentItem() is None or self._c.spec is None:
             return
-        profile = item.data(Qt.UserRole)
         era = self.era_combo.currentData()
-        self._c.song_from_profile(profile, era=era)   # era switch = new document
-        self._refresh_from_spec()
-        self.status.emit(f"Era: {era or 'default'}.")
+        keep = self.lock_tempo.isChecked()
+        # Re-flavor the CURRENT song in place (keep sections + optionally tempo) —
+        # NOT a rebuild, so an uploaded song keeps its structure and BPM.
+        self._c.apply_era(era, keep_tempo=keep)
+        self._refresh_from_spec(self.current_section_index() or 0)   # keep selection
+        self.status.emit(f"Applied {era or 'default'} — kept your song"
+                         + (" + tempo." if keep else "."))
+
+    def _on_lock_tempo(self, on):
+        if self._c.spec is not None:
+            self._c.set_tempo_locked(on)
 
     def _on_variations(self):
         if self._c.spec is None:
@@ -632,5 +643,5 @@ class GenerateView(QWidget):
         for w in (self.bpm, self.map_combo, self.regen_btn, self.play_btn,
                   self.play_all_btn, self.stop_btn, self.export_btn,
                   self.export_as_btn, self.drag_btn, self.tap_btn,
-                  self.variations_btn):
+                  self.variations_btn, self.lock_tempo):
             w.setEnabled(on)

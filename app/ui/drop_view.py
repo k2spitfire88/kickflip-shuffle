@@ -103,13 +103,21 @@ class DropView(QWidget):
         self.profile = QComboBox()
         for p in self._c.list_profiles():
             self.profile.addItem(p["name"], p["name"])
+        self.profile.currentIndexChanged.connect(self._populate_eras)
         row.addWidget(self.profile)
+        self.era_label = QLabel("Era")
+        self.era = QComboBox()
+        self.era.setToolTip("Optional: build your song in a specific era's style.")
+        row.addWidget(self.era_label)
+        row.addWidget(self.era)
         self.build_btn = QPushButton("Build drums to fit")
         self.build_btn.setObjectName("primary")
         self.build_btn.clicked.connect(self._build)
         row.addWidget(self.build_btn)
         row.addStretch(1)
         lay.addLayout(row)
+
+        self._populate_eras()
 
         self.detected = QLabel("No audio analysed yet.")
         self.detected.setObjectName("muted")
@@ -149,6 +157,19 @@ class DropView(QWidget):
         self.known_check.setEnabled(not on)
         self.align.setEnabled(not on)
         self._update_enabled()
+
+    def _populate_eras(self, *_):
+        """Fill the Era combo for the selected profile (hidden for flat profiles)."""
+        eras = self._c.list_profile_eras(self.profile.currentData())
+        self.era.blockSignals(True)
+        self.era.clear()
+        self.era.addItem("— default —", None)
+        for label in eras:
+            self.era.addItem(label, label)
+        self.era.setCurrentIndex(0)
+        self.era.blockSignals(False)
+        self.era.setVisible(bool(eras))
+        self.era_label.setVisible(bool(eras))
 
     def _known_tempo(self):
         return self.known_spin.value() if self.known_check.isChecked() else None
@@ -216,8 +237,12 @@ class DropView(QWidget):
         if self._result is None:
             return
         self._c.spec_from_analysis(self.profile.currentData(), result=self._result)
+        era = self.era.currentData()
+        if era:
+            self._c.apply_era(era, keep_tempo=True)   # flavor + keep the analysed BPM
         self.specBuilt.emit()
-        self.status.emit("Built drums to fit — edit in Generate.")
+        which = f" ({era})" if era else ""
+        self.status.emit(f"Built drums to fit{which} — edit in Generate.")
 
     def shutdown(self):
         if self._thread is not None:

@@ -212,11 +212,13 @@ class Controller:
         ``kind="fill"``   -> a 1-bar section ending on fill ``name`` (audition
         only; the arrangement 'Add as fill' action is separate).
         """
+        era = None
         if self._spec is not None:
             profile = self._spec["profile"]
             overrides = dict(self._spec.get("overrides") or {})
             ppq = self._spec.get("ppq", 480)
             tempo = self._spec.get("tempo") or engine.PROFILES[profile]["tempo"]
+            era = self._spec.get("era")          # audition in the current era's flavor
         else:
             profile = "pop_punk"
             overrides = {}
@@ -229,13 +231,16 @@ class Controller:
             section = {"groove": name, "bars": int(bars)}
         else:
             raise ValueError(f"kind must be 'groove' or 'fill', got {kind!r}")
-        return {
+        spec = {
             "ppq": ppq,
             "profile": profile,
             "tempo": float(tempo),
             "overrides": overrides,
             "sections": [section],
         }
+        if era:
+            spec["era"] = era
+        return spec
 
     # ------------------------------------------------------------------
     # Spec construction
@@ -250,6 +255,47 @@ class Controller:
     def list_profile_eras(self, profile_name):
         """Selectable era labels for a profile (empty list for flat profiles)."""
         return [b["label"] for b in engine.PROFILES.get(profile_name, {}).get("eras", [])]
+
+    def apply_era(self, era, *, keep_tempo=True):
+        """Re-flavor the CURRENT song with an era, keeping its sections (and,
+        by default, its tempo) — instead of rebuilding a fresh default arrangement.
+        Role-based sections then resolve from the era's pools; explicit-groove
+        sections keep theirs. Tracked/undoable; NOT a new document. This is the
+        'my uploaded song, in <era> style, at my BPM' path.
+
+        `keep_tempo=True` pins the current tempo (drops `tempo_range` so Regenerate
+        won't re-roll it). `keep_tempo=False` adopts the era's midpoint + range."""
+        spec = self._require_spec()          # guarantees a tempo is already present
+        self._snapshot()
+        if era:
+            spec["era"] = era
+        else:
+            spec.pop("era", None)
+        if keep_tempo:
+            spec.pop("tempo_range", None)
+        else:
+            t = engine.profile_view(spec["profile"], era).get("tempo")
+            if isinstance(t, (tuple, list)):
+                lo, hi = int(t[0]), int(t[1])
+                spec["tempo"], spec["tempo_range"] = (lo + hi) // 2, [lo, hi]
+            else:
+                spec.pop("tempo_range", None)
+        self._invalidate_preview()
+        return spec
+
+    def set_tempo_locked(self, on):
+        """Lock/unlock tempo re-roll on Regenerate. Locked -> drop `tempo_range`
+        (keep the set BPM). Unlocked -> restore the current era's range, if the era
+        actually has one (flat/int tempo -> no range to restore)."""
+        spec = self._require_spec()
+        if on:
+            spec.pop("tempo_range", None)
+        else:
+            t = engine.profile_view(spec["profile"], spec.get("era")).get("tempo")
+            if isinstance(t, (tuple, list)):
+                spec["tempo_range"] = [int(t[0]), int(t[1])]
+        self._invalidate_preview()
+        return spec
 
     def build_spec_from_ui_state(self, profile, *, axes=None, sections=None,
                                  tempo=None, ppq=480):

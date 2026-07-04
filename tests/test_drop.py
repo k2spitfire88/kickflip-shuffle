@@ -44,6 +44,29 @@ def test_analyze_populates_readout(qtbot, monkeypatch):
     assert "150" in d.detected.text()
 
 
+def test_build_with_era_flavors_and_keeps_tempo(qtbot, monkeypatch):
+    d = _drop(qtbot)
+    monkeypatch.setattr(d._c, "analyze_audio", lambda path, **kw: _fake_result())
+    d.load_file("song.wav")
+    d._start_analyze()
+    qtbot.waitUntil(lambda: d._result is not None, timeout=3000)
+    # Pick an era-capable drummer, then an era.
+    d.profile.setCurrentIndex(d.profile.findData("relient_k"))
+    assert not d.era.isHidden()                              # era combo shown
+    d.era.setCurrentIndex(d.era.findData("Mmhmm–Five Score (04–07) — Douglas"))
+    d._build()
+    spec = d._c.spec
+    assert spec["era"] == "Mmhmm–Five Score (04–07) — Douglas"
+    assert spec["tempo"] == 150.0                            # analysed BPM kept
+    assert "tempo_range" not in spec                         # pinned
+
+
+def test_era_hidden_for_flat_drop_profile(qtbot):
+    d = _drop(qtbot)
+    d.profile.setCurrentIndex(d.profile.findData("pop_punk"))
+    assert d.era.isHidden()
+
+
 def test_inputs_passed_through(qtbot, monkeypatch):
     calls = {}
 

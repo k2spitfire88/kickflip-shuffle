@@ -252,6 +252,7 @@ class MainWindow(QMainWindow):
 
     def _on_spec_built(self):
         self.generate_view.load_current_spec()
+        self.generate_view.lock_tempo.setChecked(True)   # keep the dropped song's BPM
         self.rail.setCurrentRow(0)             # switch to Generate to correct/play
 
     def _on_use_groove(self, name):
