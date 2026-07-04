@@ -160,9 +160,12 @@ class SectionEditor(QWidget):
         self.bars.setValue(s.get("bars", 4))
         self.crash.setChecked(bool(s.get("crash_in", False)))
         self.feel.setCurrentIndex(max(0, self.feel.findData(s.get("feel"))))
+        # Sliders show the EFFECTIVE axis value: a per-section override if present,
+        # else the profile/spec baseline (so barker reads high ghost, mxpx low).
+        self._glob = self._c.global_axes()
         axes = s.get("axes", {})
         for k, sl in self.sliders.items():
-            sl.setValue(int(round(axes.get(k, 0.0) * 100)))
+            sl.setValue(int(round(axes.get(k, self._glob.get(k, 0.0)) * 100)))
         for w in widgets:
             w.blockSignals(False)
         # A locked section is frozen (role -> explicit groove); editing it would
@@ -174,8 +177,12 @@ class SectionEditor(QWidget):
     def _commit(self, *_):
         if self._i is None:
             return
+        # Only write a per-section override for axes moved OFF the inherited
+        # baseline; axes left at the profile value stay inherited (so changing the
+        # profile still flows through, and the spec isn't bloated).
+        glob = getattr(self, "_glob", {})
         axes = {k: sl.value() / 100.0 for k, sl in self.sliders.items()
-                if sl.value() > 0}
+                if abs(sl.value() / 100.0 - glob.get(k, 0.0)) > 1e-9}
         self._c.update_section(
             self._i, role=self.role.currentText(), bars=self.bars.value(),
             crash_in=self.crash.isChecked(), groove=self.groove.currentData(),

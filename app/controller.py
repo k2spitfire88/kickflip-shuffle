@@ -336,6 +336,17 @@ class Controller:
         self._invalidate_preview()
         return spec
 
+    def global_axes(self):
+        """Effective global axis values for the current spec: the per-spec
+        ``overrides`` on top of the profile defaults. The section editor shows
+        these as each section's INHERITED baseline (so barker reads high ghost,
+        mxpx low), and only writes a per-section override for axes moved off it."""
+        spec = self._require_spec()
+        prof = engine.PROFILES[spec["profile"]]
+        ov = spec.get("overrides", {})
+        from engine.generate import _AXIS_KEYS
+        return {k: float(ov.get(k, prof.get(k, 0.0))) for k in _AXIS_KEYS}
+
     def set_section_feel(self, index, feel):
         """Set a section's time-feel: 'normal' (default, unsets the key so the path
         stays byte-identical), 'half' (bars twice as long), or 'double' (half as
