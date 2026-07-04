@@ -422,6 +422,30 @@ _RAMONES_ERAS = [
          ghost=0.2, ornament=0.3, fill_prob=0.5),
 ]
 
+_OFFSPRING_ERAS = [
+    # 1) Welty I: raw fast skate-punk, aggressive + driving.
+    _era("Skate (92–97) — Welty I", (150, 205),        # Come Out and Play 165 / Bad Habit
+         ["verse_basic", "ramones_buzzsaw", "two_step", "skank", "surf"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "skank"],
+         ["surf", "verse_basic"],
+         ["tom_descend", "snare_buildup", "dbeat_roll"],
+         ghost=0.3, ornament=0.3, fill_prob=0.6),
+    # 2) Welty II: radio pop-punk, polished, ska/novelty detours, wider dynamics.
+    _era("Americana (98–03) — Welty II", (100, 170),   # Kids Aren't Alright 160 / Pretty Fly 110
+         ["verse_basic", "disco_punk", "ska_punk", "four_floor", "surf"],
+         ["chorus_crash", "chorus_ride_bell"], ["halftime", "ska_punk"],
+         ["verse_basic", "surf"],
+         ["triplet_snare", "tom_around", "tom_descend"],
+         ghost=0.45, ornament=0.5, syncopation=0.3, fill_prob=0.7),
+    # 3) Parada: tighter, arena-produced, controlled power.
+    _era("Modern (08–21) — Parada", (130, 195),        # Go Far Kid 140 / Hammerhead 190
+         ["verse_basic", "verse_doubles", "four_floor", "two_step"],
+         ["chorus_crash", "chorus_doublebass"], ["halftime", "breakdown_chug"],
+         ["verse_basic", "four_floor"],
+         ["tom_descend", "marching_toms", "snare_buildup"],
+         ghost=0.4, ornament=0.4, fill_prob=0.65, humanize=0.9),
+]
+
 
 PROFILES = {
     # --- Generic / broad default ---
@@ -457,7 +481,7 @@ PROFILES = {
                     ["chorus_crash", "chorus_open_hat"], ["halftime", "skank"],
                     ["surf", "verse_basic"],
                     ["tom_descend", "triplet_snare", "ramones_crash"],
-                    ghost=0.4, ornament=0.4, fill_prob=0.7),
+                    ghost=0.4, ornament=0.4, fill_prob=0.7, eras=_OFFSPRING_ERAS),
     "mxpx": _p("90s_skate", 195,
                ["skank", "ramones_buzzsaw", "dbeat", "skank"],
                ["chorus_crash", "skank"], ["skank", "halftime"],
