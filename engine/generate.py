@@ -573,6 +573,39 @@ _GOOD_CHARLOTTE_ERAS = [
          ghost=0.5, ornament=0.5, fill_prob=0.75, humanize=0.9),
 ]
 
+# Simple Plan — one drummer (Chuck Comeau); album style-eras from fast breakout
+# pop-punk to party-pop crossover.
+_SIMPLE_PLAN_ERAS = [
+    # 1) No Pads: fast bright breakout pop-punk.
+    _era("No Pads (02)", (145, 205),                   # I'm Just a Kid 205 / Perfect 150
+         ["verse_basic", "verse_doubles", "skank", "two_step"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "skank"],
+         ["verse_basic", "verse_doubles"],
+         ["snare_buildup", "tom_descend", "triplet_snare"],
+         ghost=0.45, ornament=0.45, fill_prob=0.75),
+    # 2) Still Not Getting Any: anthemic/emo, bigger choruses + ballads.
+    _era("Still Not Getting Any (04)", (130, 185),     # Shut Up! 180 / Untitled ballad
+         ["verse_basic", "verse_doubles", "four_floor"],
+         ["chorus_crash", "chorus_ride_bell"], ["halftime", "emo_syncopated"],
+         ["verse_basic", "four_floor"],
+         ["tom_descend", "triplet_snare", "snare_buildup"],
+         ghost=0.5, ornament=0.55, fill_prob=0.75, humanize=0.9),
+    # 3) Self-Titled: polished pop, electro touches, emo-pop.
+    _era("Self-Titled (08)", (115, 175),               # When I'm Gone 140 / Your Love Is a Lie
+         ["verse_basic", "four_floor", "disco_punk", "emo_syncopated"],
+         ["chorus_crash", "chorus_doublebass"], ["halftime", "emo_syncopated"],
+         ["verse_basic", "four_floor"],
+         ["tom_descend", "triplet_snare", "snare_buildup"],
+         ghost=0.45, ornament=0.5, syncopation=0.3, fill_prob=0.65, humanize=0.9),
+    # 4) Modern: party-pop crossover, reggae/collab detours.
+    _era("Modern (11–16)", (120, 180),                 # Jet Lag 150 / Summer Paradise 135
+         ["verse_basic", "four_floor", "disco_punk", "two_step"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "disco_punk"],
+         ["verse_basic", "four_floor"],
+         ["snare_buildup", "tom_descend", "triplet_snare"],
+         ghost=0.45, ornament=0.45, syncopation=0.3, fill_prob=0.7),
+]
+
 
 PROFILES = {
     # --- Generic / broad default ---
@@ -643,7 +676,8 @@ PROFILES = {
                       ["verse_basic", "surf", "four_floor"],
                       ["chorus_crash", "chorus_open_hat"], ["halftime"],
                       ["verse_basic", "surf"], ["snare_buildup", "tom_descend"],
-                      ghost=0.3, ornament=0.45, fill_prob=0.7, humanize=0.7),
+                      ghost=0.3, ornament=0.45, fill_prob=0.7, humanize=0.7,
+                      eras=_SIMPLE_PLAN_ERAS),
     "new_found_glory": _p("2000s_mall", 178,
                           ["double_bass_verse", "verse_doubles", "skank"],
                           ["chorus_doublebass", "chorus_crash"],
