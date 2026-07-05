@@ -689,6 +689,45 @@ _SUM41_ERAS = [
          fill_prob=0.85),
 ]
 
+# Fall Out Boy — Andy Hurley throughout; emo-pop-punk -> arena pop-rock.
+_FALL_OUT_BOY_ERAS = [
+    # 1) Take This to Your Grave: raw scrappy emo-pop-punk debut.
+    _era("Take This to Your Grave (03)", (155, 195),   # Saturday 180 / Grand Theft Autumn 165
+         ["verse_doubles", "skank", "double_bass_verse", "two_step"],
+         ["chorus_crash", "chorus_doublebass"], ["halftime", "emo_syncopated"],
+         ["verse_doubles", "skank"],
+         ["tom_descend", "snare_buildup", "double_bass"],
+         ghost=0.5, ornament=0.45, double_bass=0.35, syncopation=0.3, fill_prob=0.8),
+    # 2) Cork Tree–Infinity: definitive mall-emo, danceable, syncopated. Peak FOB.
+    _era("Cork Tree–Infinity (05–07)", (140, 190),     # Sugar 150 / Dance Dance 160 / Thnks 155
+         ["disco_punk", "four_floor", "verse_doubles", "double_bass_verse"],
+         ["chorus_crash", "chorus_doublebass"], ["halftime", "emo_syncopated"],
+         ["disco_punk", "four_floor"],
+         ["tom_descend", "double_bass", "linear", "snare_buildup"],
+         ghost=0.6, ornament=0.5, double_bass=0.4, syncopation=0.5, fill_prob=0.85),
+    # 3) Folie à Deux: dense baroque-pop experiment.
+    _era("Folie à Deux (08)", (130, 180),              # I Don't Care 150 / America's Suitehearts
+         ["disco_punk", "four_floor", "emo_syncopated", "linear_tom"],
+         ["chorus_crash", "chorus_ride_bell"], ["halftime", "emo_syncopated"],
+         ["disco_punk", "emo_syncopated"],
+         ["linear", "tom_descend", "snare_buildup"],
+         ghost=0.6, ornament=0.6, syncopation=0.6, fill_prob=0.85, humanize=0.9),
+    # 4) Comeback: arena pop-rock, anthemic, electronic.
+    _era("Comeback (13–15)", (130, 180),               # Light Em Up 155 / Centuries / Uma Thurman
+         ["four_floor", "disco_punk", "marching", "trap_hat_modern"],
+         ["chorus_crash", "chorus_doublebass"], ["halftime", "marching"],
+         ["four_floor", "marching"],
+         ["tom_descend", "snare_buildup", "linear"],
+         ghost=0.5, ornament=0.5, double_bass=0.3, syncopation=0.4, fill_prob=0.75),
+    # 5) Modern: electro-pop (Mania) then organic FOB return (Stardust).
+    _era("Modern (18–23)", (120, 175),                 # Champion / Love from the Other Side
+         ["four_floor", "disco_punk", "trap_hat_modern", "emo_syncopated"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "emo_syncopated"],
+         ["four_floor", "disco_punk"],
+         ["tom_descend", "linear", "snare_buildup"],
+         ghost=0.55, ornament=0.5, syncopation=0.45, fill_prob=0.75),
+]
+
 
 PROFILES = {
     # --- Generic / broad default ---
@@ -785,7 +824,7 @@ PROFILES = {
                        ["disco_punk", "four_floor"],
                        ["tom_descend", "double_bass", "linear", "snare_buildup"],
                        ghost=0.6, ornament=0.5, double_bass=0.4, syncopation=0.5,
-                       fill_prob=0.85, humanize=0.85),
+                       fill_prob=0.85, humanize=0.85, eras=_FALL_OUT_BOY_ERAS),
     "all_time_low": _p("2000s_mall", 165,
                        ["four_floor", "verse_basic", "verse_doubles"],
                        ["chorus_crash", "chorus_open_hat"], ["halftime"],
