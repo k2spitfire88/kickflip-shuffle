@@ -839,6 +839,46 @@ _JIMMY_EAT_WORLD_ERAS = [
          ghost=0.5, ornament=0.55, syncopation=0.5, fill_prob=0.75, humanize=0.9),
 ]
 
+# Neck Deep — Dani Washington throughout; UK pop-punk revival.
+_NECK_DEEP_ERAS = [
+    # 1) Wishful Thinking: raw energetic UK revival pop-punk.
+    _era("Wishful Thinking (14)", (155, 200),          # Losing Teeth / Zoltar Speaks
+         ["two_step", "skank", "four_floor", "verse_doubles"],
+         ["chorus_crash", "chorus_doublebass"], ["gang_break", "breakdown_chug"],
+         ["two_step", "four_floor"],
+         ["tom_descend", "double_bass", "snare_buildup"],
+         ghost=0.4, ornament=0.4, double_bass=0.3, breakdown=0.3, fill_prob=0.8),
+    # 2) Life's Not Out to Get You: polished melodic peak pop-punk.
+    _era("Life's Not Out to Get You (15)", (150, 195),  # Can't Kick Up the Roots 170 / Gold Steps
+         ["four_floor", "two_step", "skank", "verse_doubles"],
+         ["chorus_crash", "chorus_doublebass"], ["gang_break", "halftime"],
+         ["four_floor", "two_step"],
+         ["tom_descend", "double_bass", "snare_buildup"],
+         ghost=0.45, ornament=0.45, double_bass=0.3, breakdown=0.35, fill_prob=0.8),
+    # 3) The Peace and the Panic: heavier, mature, breakdowns.
+    _era("The Peace and the Panic (17)", (140, 190),   # In Bloom 150 / Happy Judgement Day
+         ["four_floor", "verse_doubles", "double_bass_verse", "breakdown_chug"],
+         ["chorus_crash", "chorus_doublebass"], ["breakdown_chug", "gang_break"],
+         ["four_floor", "verse_doubles"],
+         ["tom_descend", "double_bass", "snare_buildup"],
+         ghost=0.45, ornament=0.45, double_bass=0.5, breakdown=0.5, fill_prob=0.85),
+    # 4) All Distortions: poppier, varied, melodic concept.
+    _era("All Distortions (20)", (130, 185),           # Lowlife / Fall
+         ["four_floor", "two_step", "disco_punk", "verse_basic"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "gang_break"],
+         ["four_floor", "verse_basic"],
+         ["tom_descend", "snare_buildup", "double_bass"],
+         ghost=0.45, ornament=0.5, double_bass=0.3, syncopation=0.4, breakdown=0.3,
+         fill_prob=0.75, humanize=0.9),
+    # 5) Self-Titled: raw energetic return.
+    _era("Self-Titled (24)", (150, 195),               # Dumbstruck Dumbfuck / Sort Yourself Out
+         ["two_step", "four_floor", "skank", "verse_doubles"],
+         ["chorus_crash", "chorus_doublebass"], ["gang_break", "breakdown_chug"],
+         ["two_step", "four_floor"],
+         ["tom_descend", "double_bass", "snare_buildup"],
+         ghost=0.4, ornament=0.45, double_bass=0.35, breakdown=0.35, fill_prob=0.8),
+]
+
 
 PROFILES = {
     # --- Generic / broad default ---
@@ -988,7 +1028,7 @@ PROFILES = {
                     ["verse_basic", "four_floor"],
                     ["tom_descend", "double_bass", "snare_buildup"],
                     ghost=0.6, ornament=0.5, double_bass=0.35, breakdown=0.4,
-                    fill_prob=0.8, humanize=0.9),
+                    fill_prob=0.8, humanize=0.9, eras=_NECK_DEEP_ERAS),
 
     # --- Modern revival / 2020s ---
     "revival_2020s": _p("revival_2020s", 160,
