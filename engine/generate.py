@@ -800,6 +800,45 @@ _PARAMORE_ERAS = [
          ghost=0.55, ornament=0.6, syncopation=0.6, fill_prob=0.75, humanize=0.9),
 ]
 
+# Jimmy Eat World — Zach Lind throughout; emo -> alt-rock, driving/dynamic.
+_JIMMY_EAT_WORLD_ERAS = [
+    # 1) Clarity-era: dynamic layered emo/post-hardcore.
+    _era("Clarity-era emo (96–99)", (130, 175),        # Lucky Denver Mint / For Me This Is Heaven
+         ["verse_basic", "surf", "emo_syncopated", "verse_doubles"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "emo_syncopated"],
+         ["verse_basic", "emo_syncopated"],
+         ["tom_descend", "snare_buildup"],
+         ghost=0.5, ornament=0.5, syncopation=0.5, fill_prob=0.75, humanize=0.9),
+    # 2) Bleed American: breakout accessible alt-rock / power-pop.
+    _era("Bleed American (01)", (140, 185),            # The Middle 164 / Sweetness 150
+         ["verse_basic", "verse_doubles", "four_floor", "surf"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime"],
+         ["verse_basic", "four_floor"],
+         ["tom_descend", "snare_buildup"],
+         ghost=0.45, ornament=0.45, syncopation=0.4, fill_prob=0.75),
+    # 3) Futures: darker, heavier driving rock.
+    _era("Futures (04)", (130, 170),                   # Pain 150 / Work 145
+         ["verse_doubles", "verse_basic", "emo_syncopated", "four_floor"],
+         ["chorus_crash", "chorus_doublebass"], ["halftime", "breakdown_chug"],
+         ["verse_doubles", "verse_basic"],
+         ["tom_descend", "snare_buildup", "double_bass"],
+         ghost=0.5, ornament=0.5, syncopation=0.45, double_bass=0.3, fill_prob=0.8),
+    # 4) Chase This Light–Damage: polished mainstream pop-rock.
+    _era("Chase This Light–Damage (07–13)", (120, 165),  # Big Casino / My Best Theory
+         ["four_floor", "verse_basic", "disco_punk", "emo_syncopated"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime"],
+         ["four_floor", "verse_basic"],
+         ["tom_descend", "snare_buildup"],
+         ghost=0.45, ornament=0.5, syncopation=0.4, fill_prob=0.7, humanize=0.9),
+    # 5) Integrity Blues–Surviving: mature dynamic anthemic rock.
+    _era("Integrity Blues–Surviving (16–19)", (120, 170),  # Sure and Certain / 555
+         ["verse_basic", "four_floor", "emo_syncopated", "marching"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "marching"],
+         ["verse_basic", "four_floor"],
+         ["tom_descend", "snare_buildup", "triplet_snare"],
+         ghost=0.5, ornament=0.55, syncopation=0.5, fill_prob=0.75, humanize=0.9),
+]
+
 
 PROFILES = {
     # --- Generic / broad default ---
@@ -931,7 +970,7 @@ PROFILES = {
                           ["verse_basic", "emo_syncopated"],
                           ["tom_descend", "snare_buildup"],
                           ghost=0.6, ornament=0.4, syncopation=0.3,
-                          fill_prob=0.7, humanize=1.0),
+                          fill_prob=0.7, humanize=1.0, eras=_JIMMY_EAT_WORLD_ERAS),
 
     # --- Easycore / 2010s ---
     "easycore": _p("easycore_2010s", 182,
