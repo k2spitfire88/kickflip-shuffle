@@ -391,6 +391,494 @@ _RELIENT_K_ERAS = [
          ghost=0.4, ornament=0.45, syncopation=0.3, fill_prob=0.7, humanize=0.9),
 ]
 
+_RAMONES_ERAS = [
+    # 1) Tommy: foundation buzzsaw, purest + least ornamented, minimal fills.
+    _era("Buzzsaw (76–78) — Tommy", (165, 205),        # Blitzkrieg Bop 180 / Judy fast
+         ["ramones_buzzsaw", "two_step", "verse_basic"],
+         ["chorus_crash", "ramones_buzzsaw"], ["halftime"],
+         ["ramones_buzzsaw"],
+         ["ramones_crash", "tom_descend"],
+         ghost=0.05, ornament=0.1, fill_prob=0.35),
+    # 2) Marky I: harder hitter, tighter rock backbeat, more fills.
+    _era("Rock'n'Roll (78–82) — Marky I", (145, 185),  # I Wanna Be Sedated 145
+         ["ramones_buzzsaw", "two_step", "verse_basic", "verse_ride"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "surf"],
+         ["verse_basic"],
+         ["tom_around", "tom_descend", "snare_buildup"],
+         ghost=0.15, ornament=0.25, fill_prob=0.55),
+    # 3) Richie: fastest + most aggressive, hardcore-influenced.
+    _era("Hardcore (83–87) — Richie", (195, 245),      # Wart Hog blazing
+         ["ramones_buzzsaw", "dbeat", "two_step", "blast_beat"],
+         ["chorus_crash", "ramones_buzzsaw"], ["halftime", "dbeat"],
+         ["dbeat"],
+         ["dbeat_roll", "snare_buildup", "tom_descend"],
+         ghost=0.1, ornament=0.15, fill_prob=0.6),
+    # 4) Marky II: return, wider dynamics, some moody mid-tempo.
+    _era("Return (87–96) — Marky II", (135, 185),      # Pet Sematary 130-ish / Poison Heart
+         ["verse_basic", "two_step", "surf", "ramones_buzzsaw"],
+         ["chorus_crash", "chorus_ride_bell"], ["halftime", "surf"],
+         ["verse_basic", "surf"],
+         ["tom_descend", "tom_around", "ramones_crash"],
+         ghost=0.2, ornament=0.3, fill_prob=0.5),
+]
+
+_OFFSPRING_ERAS = [
+    # 1) Welty I: raw fast skate-punk, aggressive + driving.
+    _era("Skate (92–97) — Welty I", (150, 205),        # Come Out and Play 165 / Bad Habit
+         ["verse_basic", "ramones_buzzsaw", "two_step", "skank", "surf"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "skank"],
+         ["surf", "verse_basic"],
+         ["tom_descend", "snare_buildup", "dbeat_roll"],
+         ghost=0.3, ornament=0.3, fill_prob=0.6),
+    # 2) Welty II: radio pop-punk, polished, ska/novelty detours, wider dynamics.
+    _era("Americana (98–03) — Welty II", (100, 170),   # Kids Aren't Alright 160 / Pretty Fly 110
+         ["verse_basic", "disco_punk", "ska_punk", "four_floor", "surf"],
+         ["chorus_crash", "chorus_ride_bell"], ["halftime", "ska_punk"],
+         ["verse_basic", "surf"],
+         ["triplet_snare", "tom_around", "tom_descend"],
+         ghost=0.45, ornament=0.5, syncopation=0.3, fill_prob=0.7),
+    # 3) Parada: tighter, arena-produced, controlled power.
+    _era("Modern (08–21) — Parada", (130, 195),        # Go Far Kid 140 / Hammerhead 190
+         ["verse_basic", "verse_doubles", "four_floor", "two_step"],
+         ["chorus_crash", "chorus_doublebass"], ["halftime", "breakdown_chug"],
+         ["verse_basic", "four_floor"],
+         ["tom_descend", "marching_toms", "snare_buildup"],
+         ghost=0.4, ornament=0.4, fill_prob=0.65, humanize=0.9),
+]
+
+# MxPx — one drummer (Yuri Ruley) throughout; splits are style-eras, incl. the
+# post-2018 re-energized comeback the owner hears starting at the self-titled LP.
+_MXPX_ERAS = [
+    # 1) Tooth & Nail: raw fast Christian skate-punk, simple + relentless.
+    #    Straight fast punk + skank (NOT d-beat/crust); tops ~215, not blast.
+    _era("Tooth & Nail (94–97)", (185, 225),           # Punk Rawk Show / Move to Bremerton
+         ["skank", "ramones_buzzsaw", "two_step", "verse_basic"],
+         ["chorus_crash", "skank"], ["skank", "halftime"],
+         ["ramones_buzzsaw", "skank"],
+         ["dbeat_roll", "tom_descend"],
+         ghost=0.25, ornament=0.25, fill_prob=0.55),
+    # 2) Major-label: polished melodic pop-punk, radio sheen.
+    _era("Major-label (98–01)", (160, 205),            # Responsibility 180
+         ["verse_basic", "skank", "surf", "four_floor"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "skank"],
+         ["verse_basic", "surf"],
+         ["triplet_snare", "tom_around", "tom_descend"],
+         ghost=0.4, ornament=0.45, fill_prob=0.7),
+    # 3) Mid-career: polished melodic pop-punk PRIMARY (Before Everything & After
+    #    pop, Secret Weapon fast-melodic) with a heavier Panic streak (breakdown
+    #    in the bridge only) — NOT a heavy era across the board.
+    _era("Mid-career (03–07)", (150, 210),             # BE&A pop / Panic heavy / Secret Weapon
+         ["verse_basic", "verse_doubles", "skank", "four_floor"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "breakdown_chug"],
+         ["verse_basic", "surf"],
+         ["tom_descend", "triplet_snare", "snare_buildup"],
+         ghost=0.4, ornament=0.45, fill_prob=0.7, humanize=0.9),
+    # 4) Return: Plans Within Plans — fast, aggressive, back-to-roots.
+    _era("Return (2012)", (175, 210),                  # Plans Within Plans fast punk
+         ["skank", "ramones_buzzsaw", "two_step", "verse_basic"],
+         ["chorus_crash", "chorus_open_hat"], ["skank", "halftime"],
+         ["ramones_buzzsaw", "skank"],
+         ["dbeat_roll", "tom_descend", "triplet_snare"],
+         ghost=0.3, ornament=0.35, fill_prob=0.65),
+    # 5) Comeback: MxPx (s/t) + Find a Way Home — re-energized, celebratory,
+    #    anthemic drive (the distinct energy that returned at the self-titled).
+    _era("Comeback (18–23)", (160, 205),               # MxPx s/t / Find a Way Home
+         ["verse_basic", "skank", "two_step", "four_floor"],
+         ["chorus_crash", "chorus_open_hat", "chorus_ride_bell"],
+         ["halftime", "skank"], ["verse_basic", "skank"],
+         ["triplet_snare", "tom_around", "tom_descend"],
+         ghost=0.4, ornament=0.45, fill_prob=0.75, humanize=0.95),
+]
+
+# Travis Barker — marquee/busiest profile. Eras span blink-182 + side projects;
+# the half-time shuffle (app namesake) leans heaviest in Untitled + Crossover.
+# Reunion splits by lineup: Tom-reunion (Neighborhoods) / Skiba (California,Nine)
+# / Tom-returns (One More Time).
+_BARKER_ERAS = [
+    # 1) Enema: fast melodic skate-punk, signature ghost/hat work + flashy fills.
+    _era("Enema (97–01)", (150, 200),                  # What's My Age 160 / First Date 170
+         ["verse_16th", "verse_doubles", "verse_ride", "two_step"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "skank"],
+         ["verse_doubles", "verse_16th"],
+         ["triplet_snare", "tom_descend", "snare_buildup", "marching_toms"],
+         ghost=0.9, ornament=0.9, fill_prob=0.9),
+    # 2) Untitled: moody/atmospheric, halftime, complex, linear.
+    _era("Untitled (03–04)", (90, 170),                # I Miss You halftime / Feeling This
+         ["verse_16th", "emo_syncopated", "linear_tom", "half_time_shuffle"],
+         ["chorus_crash", "chorus_ride_bell"], ["half_time_shuffle", "halftime"],
+         ["emo_syncopated", "linear_tom"],
+         ["linear", "halfbar_toms", "marching_toms", "tom_around"],
+         ghost=1.0, ornament=1.0, syncopation=0.5, fill_prob=0.85, humanize=0.85),
+    # 3) Crossover: +44/Transplants/hip-hop — programmed-tight, peak shuffle.
+    _era("Crossover (05–10)", (100, 185),              # +44 / Transplants / DJ AM collabs
+         ["half_time_shuffle", "linear_tom", "disco_punk", "four_floor",
+          "trap_hat_modern"],
+         ["chorus_crash", "chorus_doublebass"], ["half_time_shuffle", "breakdown_chug"],
+         ["disco_punk", "half_time_shuffle"],
+         ["linear", "triplet_snare", "tom_around"],
+         ghost=1.0, ornament=1.0, syncopation=0.7, fill_prob=0.9, humanize=0.8),
+    # 4) Reunion: Neighborhoods, Dogs Eating Dogs (Tom) — mature, atmospheric+busy.
+    _era("Reunion (11–13)", (140, 190),                # Up All Night / After Midnight
+         ["verse_16th", "verse_doubles", "emo_syncopated", "half_time_shuffle"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "half_time_shuffle"],
+         ["verse_doubles", "emo_syncopated"],
+         ["triplet_snare", "marching_toms", "halfbar_toms", "tom_around"],
+         ghost=0.95, ornament=0.95, syncopation=0.4, fill_prob=0.95),
+    # 5) California: California, Nine (Skiba) — poppier, tighter, polished modern.
+    _era("California (16–19)", (150, 200),             # Bored to Death / She's Out of Her Mind
+         ["verse_16th", "verse_doubles", "verse_ride", "two_step"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "skank"],
+         ["verse_doubles", "verse_16th"],
+         ["triplet_snare", "tom_descend", "snare_buildup"],
+         ghost=0.9, ornament=0.9, fill_prob=0.9, humanize=0.85),
+    # 6) One More Time: Tom returns — nostalgic return-to-roots, classic+mature mix.
+    _era("One More Time (2023)", (150, 200),           # One More Time / Edging
+         ["verse_16th", "verse_doubles", "verse_ride", "half_time_shuffle"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "half_time_shuffle"],
+         ["verse_doubles", "verse_16th"],
+         ["triplet_snare", "tom_descend", "marching_toms", "halfbar_toms"],
+         ghost=0.95, ornament=0.95, syncopation=0.3, fill_prob=0.95, humanize=0.85),
+]
+
+# Good Charlotte — Wilson (00–05) then Butterworth (05–present); the big style
+# breaks are album-driven (Chronicles theatrical, Revival dance-punk pivot).
+_GOOD_CHARLOTTE_ERAS = [
+    # 1) Breakout: bright fast anthemic pop-punk.
+    _era("Breakout (00–03)", (150, 190),               # The Anthem 160 / Lifestyles 150
+         ["verse_basic", "verse_doubles", "skank", "two_step"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "skank"],
+         ["verse_basic", "verse_doubles"],
+         ["snare_buildup", "tom_descend", "triplet_snare"],
+         ghost=0.5, ornament=0.5, fill_prob=0.75),
+    # 2) Chronicles: darker, theatrical, orchestral edge.
+    _era("Chronicles (04)", (140, 185),                # I Just Wanna Live 165 / Predictable
+         ["verse_basic", "verse_doubles", "tribal_toms", "marching"],
+         ["chorus_crash", "chorus_ride_bell"], ["halftime", "tribal_toms"],
+         ["verse_basic", "marching"],
+         ["tom_descend", "marching_toms", "tom_around", "triplet_snare"],
+         ghost=0.55, ornament=0.6, syncopation=0.3, fill_prob=0.8, humanize=0.9),
+    # 3) Revival: dance-punk/electro pivot, four-floor.
+    _era("Revival (07)", (120, 170),                   # Dance Floor Anthem 130 / The River
+         ["four_floor", "disco_punk", "verse_basic", "trap_hat_modern"],
+         ["chorus_crash", "chorus_doublebass"], ["halftime", "disco_punk"],
+         ["four_floor", "disco_punk"],
+         ["snare_buildup", "tom_descend", "triplet_snare"],
+         ghost=0.4, ornament=0.45, syncopation=0.4, fill_prob=0.65),
+    # 4) Modern: back-to-roots (Cardiology) then moody modern (Generation Rx).
+    _era("Modern (10–18)", (125, 180),                 # Like It's Her Birthday / Generation Rx
+         ["verse_basic", "verse_doubles", "four_floor", "emo_syncopated"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "emo_syncopated"],
+         ["verse_basic", "four_floor"],
+         ["tom_descend", "triplet_snare", "snare_buildup"],
+         ghost=0.5, ornament=0.5, fill_prob=0.75, humanize=0.9),
+]
+
+# Simple Plan — one drummer (Chuck Comeau); album style-eras from fast breakout
+# pop-punk to party-pop crossover.
+_SIMPLE_PLAN_ERAS = [
+    # 1) No Pads: fast bright breakout pop-punk.
+    _era("No Pads (02)", (145, 205),                   # I'm Just a Kid 205 / Perfect 150
+         ["verse_basic", "verse_doubles", "skank", "two_step"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "skank"],
+         ["verse_basic", "verse_doubles"],
+         ["snare_buildup", "tom_descend", "triplet_snare"],
+         ghost=0.45, ornament=0.45, fill_prob=0.75),
+    # 2) Still Not Getting Any: anthemic/emo, bigger choruses + ballads.
+    _era("Still Not Getting Any (04)", (130, 185),     # Shut Up! 180 / Untitled ballad
+         ["verse_basic", "verse_doubles", "four_floor"],
+         ["chorus_crash", "chorus_ride_bell"], ["halftime", "emo_syncopated"],
+         ["verse_basic", "four_floor"],
+         ["tom_descend", "triplet_snare", "snare_buildup"],
+         ghost=0.5, ornament=0.55, fill_prob=0.75, humanize=0.9),
+    # 3) Self-Titled: polished pop, electro touches, emo-pop.
+    _era("Self-Titled (08)", (115, 175),               # When I'm Gone 140 / Your Love Is a Lie
+         ["verse_basic", "four_floor", "disco_punk", "emo_syncopated"],
+         ["chorus_crash", "chorus_doublebass"], ["halftime", "emo_syncopated"],
+         ["verse_basic", "four_floor"],
+         ["tom_descend", "triplet_snare", "snare_buildup"],
+         ghost=0.45, ornament=0.5, syncopation=0.3, fill_prob=0.65, humanize=0.9),
+    # 4) Modern: party-pop crossover, reggae/collab detours.
+    _era("Modern (11–16)", (120, 180),                 # Jet Lag 150 / Summer Paradise 135
+         ["verse_basic", "four_floor", "disco_punk", "two_step"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "disco_punk"],
+         ["verse_basic", "four_floor"],
+         ["snare_buildup", "tom_descend", "triplet_snare"],
+         ghost=0.45, ornament=0.45, syncopation=0.3, fill_prob=0.7),
+]
+
+# New Found Glory — easycore pioneers (Cyrus Bolooki throughout). Eras vary the
+# heaviness around NFG's double-bass/breakdown identity.
+_NFG_ERAS = [
+    # 1) Early: melodic pop-punk w/ emo edge, less breakdown.
+    _era("Early (99–00)", (160, 200),                  # Hit or Miss / Dressed to Kill
+         ["verse_doubles", "skank", "double_bass_verse"],
+         ["chorus_crash", "chorus_doublebass"], ["halftime", "skank"],
+         ["verse_doubles", "skank"],
+         ["tom_descend", "snare_buildup", "triplet_snare"],
+         ghost=0.5, ornament=0.4, double_bass=0.4, fill_prob=0.7),
+    # 2) Breakout: definitive NFG — tight pop-punk + hardcore breakdowns.
+    _era("Breakout (02–04)", (150, 195),               # My Friends Over You / All Downhill
+         ["double_bass_verse", "verse_doubles", "skank", "breakdown_chug"],
+         ["chorus_doublebass", "chorus_crash"], ["breakdown_chug", "gang_break"],
+         ["verse_doubles", "double_bass_verse"],
+         ["double_bass", "china_choke", "tom_descend"],
+         ghost=0.5, ornament=0.4, double_bass=0.7, breakdown=0.6, fill_prob=0.75),
+    # 3) Coming Home: mellow, mature, atmospheric departure.
+    _era("Coming Home (06)", (120, 170),               # It's Not Your Fault / Hold My Hand
+         ["verse_basic", "verse_ride", "surf"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "emo_syncopated"],
+         ["verse_basic", "surf"],
+         ["tom_descend", "snare_buildup", "triplet_snare"],
+         ghost=0.5, ornament=0.5, double_bass=0.15, fill_prob=0.6, humanize=0.9),
+    # 4) Comeback: fast aggressive return, Ramones-y.
+    _era("Comeback (09–11)", (165, 210),               # Listen to Your Friends / Radiosurgery
+         ["double_bass_verse", "verse_doubles", "ramones_buzzsaw", "skank"],
+         ["chorus_doublebass", "chorus_crash"], ["breakdown_chug", "halftime"],
+         ["ramones_buzzsaw", "double_bass_verse"],
+         ["double_bass", "dbeat_roll", "tom_descend"],
+         ghost=0.45, ornament=0.4, double_bass=0.6, fill_prob=0.8),
+    # 5) Later: heavy easycore return + experimental (heaviest).
+    _era("Later (14–20)", (150, 205),                  # Ready and Willing / Happy Being Miserable
+         ["double_bass_verse", "breakdown_chug", "verse_doubles", "blast_beat"],
+         ["chorus_doublebass", "chorus_crash"], ["breakdown_chug", "gang_break"],
+         ["double_bass_verse", "verse_doubles"],
+         ["double_bass", "china_choke", "blast"],
+         ghost=0.5, ornament=0.4, double_bass=0.75, breakdown=0.6, syncopation=0.3,
+         fill_prob=0.8),
+]
+
+# Sum 41 — dramatic pop-punk -> metal arc. Stevo (96–13) then Zummo (15–present,
+# the Metal era). Light/bratty early, heaviest late.
+_SUM41_ERAS = [
+    # 1) All Killer: bratty fast skate pop-punk.
+    _era("All Killer (01)", (150, 200),                # Fat Lip 190 / In Too Deep 150
+         ["skank", "verse_doubles", "two_step", "ramones_buzzsaw"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "skank"],
+         ["skank", "verse_doubles"],
+         ["dbeat_roll", "tom_descend", "snare_buildup"],
+         ghost=0.4, ornament=0.4, double_bass=0.2, fill_prob=0.75),
+    # 2) Metal-tinge: heavier, metal riffs, aggressive.
+    _era("Metal-tinge (02–04)", (145, 195),            # Still Waiting / The Hell Song / Pieces
+         ["verse_doubles", "double_bass_verse", "dbeat", "breakdown_chug"],
+         ["chorus_doublebass", "chorus_crash"], ["breakdown_chug", "gang_break"],
+         ["dbeat", "verse_doubles"],
+         ["double_bass", "tom_descend", "china_choke"],
+         ghost=0.45, ornament=0.4, double_bass=0.5, breakdown=0.5, fill_prob=0.8),
+    # 3) Underclass Hero: melodic pop-punk return, political.
+    _era("Underclass Hero (07)", (150, 195),           # Underclass Hero 185 / Walking Disaster
+         ["skank", "verse_doubles", "two_step", "verse_basic"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "skank"],
+         ["verse_basic", "verse_doubles"],
+         ["tom_descend", "snare_buildup", "triplet_snare"],
+         ghost=0.45, ornament=0.45, double_bass=0.25, fill_prob=0.75),
+    # 4) Screaming Bloody Murder: dark, heavy, transitional.
+    _era("Screaming Bloody Murder (11)", (140, 200),   # Blood in My Eyes / title track
+         ["double_bass_verse", "dbeat", "breakdown_chug", "verse_doubles"],
+         ["chorus_doublebass", "chorus_crash"], ["breakdown_chug", "blast_beat"],
+         ["dbeat", "double_bass_verse"],
+         ["double_bass", "dbeat_roll", "china_choke"],
+         ghost=0.45, ornament=0.4, double_bass=0.6, breakdown=0.5, syncopation=0.3,
+         fill_prob=0.8, humanize=0.85),
+    # 5) Metal: full metal/hard rock, double-bass (Zummo). Heaviest.
+    _era("Metal (16–24)", (150, 210),                  # Fake My Own Death / War / Landmines
+         ["double_bass_verse", "dbeat", "blast_beat", "breakdown_chug"],
+         ["chorus_doublebass", "chorus_crash"], ["breakdown_chug", "gang_break"],
+         ["double_bass_verse", "dbeat"],
+         ["double_bass", "blast", "china_choke"],
+         ghost=0.5, ornament=0.4, double_bass=0.85, breakdown=0.6, syncopation=0.35,
+         fill_prob=0.85),
+]
+
+# Fall Out Boy — Andy Hurley throughout; emo-pop-punk -> arena pop-rock.
+_FALL_OUT_BOY_ERAS = [
+    # 1) Take This to Your Grave: raw scrappy emo-pop-punk debut.
+    _era("Take This to Your Grave (03)", (155, 195),   # Saturday 180 / Grand Theft Autumn 165
+         ["verse_doubles", "skank", "double_bass_verse", "two_step"],
+         ["chorus_crash", "chorus_doublebass"], ["halftime", "emo_syncopated"],
+         ["verse_doubles", "skank"],
+         ["tom_descend", "snare_buildup", "double_bass"],
+         ghost=0.5, ornament=0.45, double_bass=0.35, syncopation=0.3, fill_prob=0.8),
+    # 2) Cork Tree–Infinity: definitive mall-emo, danceable, syncopated. Peak FOB.
+    _era("Cork Tree–Infinity (05–07)", (140, 190),     # Sugar 150 / Dance Dance 160 / Thnks 155
+         ["disco_punk", "four_floor", "verse_doubles", "double_bass_verse"],
+         ["chorus_crash", "chorus_doublebass"], ["halftime", "emo_syncopated"],
+         ["disco_punk", "four_floor"],
+         ["tom_descend", "double_bass", "linear", "snare_buildup"],
+         ghost=0.6, ornament=0.5, double_bass=0.4, syncopation=0.5, fill_prob=0.85),
+    # 3) Folie à Deux: dense baroque-pop experiment.
+    _era("Folie à Deux (08)", (130, 180),              # I Don't Care 150 / America's Suitehearts
+         ["disco_punk", "four_floor", "emo_syncopated", "linear_tom"],
+         ["chorus_crash", "chorus_ride_bell"], ["halftime", "emo_syncopated"],
+         ["disco_punk", "emo_syncopated"],
+         ["linear", "tom_descend", "snare_buildup"],
+         ghost=0.6, ornament=0.6, syncopation=0.6, fill_prob=0.85, humanize=0.9),
+    # 4) Comeback: arena pop-rock, anthemic, electronic.
+    _era("Comeback (13–15)", (130, 180),               # Light Em Up 155 / Centuries / Uma Thurman
+         ["four_floor", "disco_punk", "marching", "trap_hat_modern"],
+         ["chorus_crash", "chorus_doublebass"], ["halftime", "marching"],
+         ["four_floor", "marching"],
+         ["tom_descend", "snare_buildup", "linear"],
+         ghost=0.5, ornament=0.5, double_bass=0.3, syncopation=0.4, fill_prob=0.75),
+    # 5) Modern: electro-pop (Mania) then organic FOB return (Stardust).
+    _era("Modern (18–23)", (120, 175),                 # Champion / Love from the Other Side
+         ["four_floor", "disco_punk", "trap_hat_modern", "emo_syncopated"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "emo_syncopated"],
+         ["four_floor", "disco_punk"],
+         ["tom_descend", "linear", "snare_buildup"],
+         ghost=0.55, ornament=0.5, syncopation=0.45, fill_prob=0.75),
+]
+
+# All Time Low — Rian Dawson throughout; clean pop-punk -> arena/synth -> return.
+_ALL_TIME_LOW_ERAS = [
+    # 1) Breakout: scrappy -> classic fast ATL pop-punk.
+    _era("Breakout (05–09)", (150, 200),               # Dear Maria 165 / Six Feet Under 180
+         ["four_floor", "verse_basic", "verse_doubles", "skank"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime"],
+         ["four_floor", "verse_basic"],
+         ["snare_buildup", "tom_descend", "triplet_snare"],
+         ghost=0.4, ornament=0.4, syncopation=0.3, fill_prob=0.8),
+    # 2) Dirty Work: glossy major-label pop-rock, danceable.
+    _era("Dirty Work (11)", (140, 180),                # I Feel Like Dancin' / Time-Bomb
+         ["four_floor", "disco_punk", "verse_basic"],
+         ["chorus_open_hat", "chorus_crash"], ["halftime"],
+         ["four_floor", "disco_punk"],
+         ["snare_buildup", "tom_descend"],
+         ghost=0.45, ornament=0.45, syncopation=0.3, fill_prob=0.7),
+    # 3) Don't Panic–Future Hearts: roots return -> arena anthemic.
+    _era("Don't Panic–Future Hearts (12–15)", (145, 190),  # Reckless / Kids in the Dark 140
+         ["four_floor", "verse_doubles", "verse_basic", "marching"],
+         ["chorus_crash", "chorus_doublebass"], ["halftime", "marching"],
+         ["four_floor", "verse_doubles"],
+         ["snare_buildup", "tom_descend", "triplet_snare"],
+         ghost=0.45, ornament=0.5, syncopation=0.3, fill_prob=0.8),
+    # 4) Last Young Renegade: synth/electronic, moody pop-rock.
+    _era("Last Young Renegade (17)", (120, 165),       # LYR / Life of the Party
+         ["four_floor", "disco_punk", "trap_hat_modern", "emo_syncopated"],
+         ["chorus_open_hat", "chorus_crash"], ["halftime", "emo_syncopated"],
+         ["four_floor", "disco_punk"],
+         ["snare_buildup", "linear", "tom_descend"],
+         ghost=0.5, ornament=0.5, syncopation=0.5, fill_prob=0.7, humanize=0.9),
+    # 5) Modern: bright pop-punk return -> modern rock.
+    _era("Modern (20–23)", (135, 185),                 # Some Kind of Disaster / Sleepwalking
+         ["four_floor", "verse_doubles", "verse_basic", "trap_hat_modern"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime"],
+         ["four_floor", "verse_basic"],
+         ["snare_buildup", "tom_descend", "triplet_snare"],
+         ghost=0.45, ornament=0.45, syncopation=0.3, fill_prob=0.75),
+]
+
+# Paramore — Zac Farro (05–09), session drummer (13), Zac returns (17, 23).
+# Genre mutates hard: pop-punk -> new-wave pop -> synth-funk -> dance-punk.
+_PARAMORE_ERAS = [
+    # 1) Riot!-era: driving emo pop-punk -> mature rock (Zac Farro).
+    _era("Riot!-era (05–09)", (140, 185),              # Misery Business 172 / Ignorance 150
+         ["four_floor", "verse_doubles", "verse_basic", "skank"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "tribal_toms"],
+         ["four_floor", "verse_basic"],
+         ["tom_around", "tom_descend", "triplet_snare"],
+         ghost=0.45, ornament=0.5, syncopation=0.3, double_bass=0.2, fill_prob=0.8),
+    # 2) Self-Titled: eclectic new-wave/gospel pop (session drummer).
+    _era("Self-Titled (13)", (120, 170),               # Still Into You 136 / Ain't It Fun 104
+         ["disco_punk", "four_floor", "verse_basic", "emo_syncopated"],
+         ["chorus_open_hat", "chorus_ride_bell"], ["halftime", "tribal_toms"],
+         ["disco_punk", "verse_basic"],
+         ["tom_around", "tom_descend", "linear"],
+         ghost=0.5, ornament=0.5, syncopation=0.5, fill_prob=0.7, humanize=0.9),
+    # 3) After Laughter: 80s synth-pop/funk, syncopated (Zac returns).
+    _era("After Laughter (17)", (110, 160),            # Hard Times 112 / Rose-Colored Boy
+         ["disco_punk", "four_floor", "emo_syncopated", "trap_hat_modern"],
+         ["chorus_open_hat", "chorus_ride_bell"], ["halftime", "emo_syncopated"],
+         ["disco_punk", "emo_syncopated"],
+         ["linear", "tom_around", "tom_descend"],
+         ghost=0.55, ornament=0.55, syncopation=0.6, fill_prob=0.7, humanize=0.95),
+    # 4) This Is Why: angular post-punk / dance-punk, jittery (Zac).
+    _era("This Is Why (23)", (120, 165),               # This Is Why 130 / The News 150
+         ["disco_punk", "emo_syncopated", "linear_tom", "four_floor"],
+         ["chorus_open_hat", "chorus_crash"], ["halftime", "emo_syncopated"],
+         ["disco_punk", "linear_tom"],
+         ["linear", "tom_around", "tom_descend"],
+         ghost=0.55, ornament=0.6, syncopation=0.6, fill_prob=0.75, humanize=0.9),
+]
+
+# Jimmy Eat World — Zach Lind throughout; emo -> alt-rock, driving/dynamic.
+_JIMMY_EAT_WORLD_ERAS = [
+    # 1) Clarity-era: dynamic layered emo/post-hardcore.
+    _era("Clarity-era emo (96–99)", (130, 175),        # Lucky Denver Mint / For Me This Is Heaven
+         ["verse_basic", "surf", "emo_syncopated", "verse_doubles"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "emo_syncopated"],
+         ["verse_basic", "emo_syncopated"],
+         ["tom_descend", "snare_buildup"],
+         ghost=0.5, ornament=0.5, syncopation=0.5, fill_prob=0.75, humanize=0.9),
+    # 2) Bleed American: breakout accessible alt-rock / power-pop.
+    _era("Bleed American (01)", (140, 185),            # The Middle 164 / Sweetness 150
+         ["verse_basic", "verse_doubles", "four_floor", "surf"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime"],
+         ["verse_basic", "four_floor"],
+         ["tom_descend", "snare_buildup"],
+         ghost=0.45, ornament=0.45, syncopation=0.4, fill_prob=0.75),
+    # 3) Futures: darker, heavier driving rock.
+    _era("Futures (04)", (130, 170),                   # Pain 150 / Work 145
+         ["verse_doubles", "verse_basic", "emo_syncopated", "four_floor"],
+         ["chorus_crash", "chorus_doublebass"], ["halftime", "breakdown_chug"],
+         ["verse_doubles", "verse_basic"],
+         ["tom_descend", "snare_buildup", "double_bass"],
+         ghost=0.5, ornament=0.5, syncopation=0.45, double_bass=0.3, fill_prob=0.8),
+    # 4) Chase This Light–Damage: polished mainstream pop-rock.
+    _era("Chase This Light–Damage (07–13)", (120, 165),  # Big Casino / My Best Theory
+         ["four_floor", "verse_basic", "disco_punk", "emo_syncopated"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime"],
+         ["four_floor", "verse_basic"],
+         ["tom_descend", "snare_buildup"],
+         ghost=0.45, ornament=0.5, syncopation=0.4, fill_prob=0.7, humanize=0.9),
+    # 5) Integrity Blues–Surviving: mature dynamic anthemic rock.
+    _era("Integrity Blues–Surviving (16–19)", (120, 170),  # Sure and Certain / 555
+         ["verse_basic", "four_floor", "emo_syncopated", "marching"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "marching"],
+         ["verse_basic", "four_floor"],
+         ["tom_descend", "snare_buildup", "triplet_snare"],
+         ghost=0.5, ornament=0.55, syncopation=0.5, fill_prob=0.75, humanize=0.9),
+]
+
+# Neck Deep — Dani Washington throughout; UK pop-punk revival.
+_NECK_DEEP_ERAS = [
+    # 1) Wishful Thinking: raw energetic UK revival pop-punk.
+    _era("Wishful Thinking (14)", (155, 200),          # Losing Teeth / Zoltar Speaks
+         ["two_step", "skank", "four_floor", "verse_doubles"],
+         ["chorus_crash", "chorus_doublebass"], ["gang_break", "breakdown_chug"],
+         ["two_step", "four_floor"],
+         ["tom_descend", "double_bass", "snare_buildup"],
+         ghost=0.4, ornament=0.4, double_bass=0.3, breakdown=0.3, fill_prob=0.8),
+    # 2) Life's Not Out to Get You: polished melodic peak pop-punk.
+    _era("Life's Not Out to Get You (15)", (150, 195),  # Can't Kick Up the Roots 170 / Gold Steps
+         ["four_floor", "two_step", "skank", "verse_doubles"],
+         ["chorus_crash", "chorus_doublebass"], ["gang_break", "halftime"],
+         ["four_floor", "two_step"],
+         ["tom_descend", "double_bass", "snare_buildup"],
+         ghost=0.45, ornament=0.45, double_bass=0.3, breakdown=0.35, fill_prob=0.8),
+    # 3) The Peace and the Panic: heavier, mature, breakdowns.
+    _era("The Peace and the Panic (17)", (140, 190),   # In Bloom 150 / Happy Judgement Day
+         ["four_floor", "verse_doubles", "double_bass_verse", "breakdown_chug"],
+         ["chorus_crash", "chorus_doublebass"], ["breakdown_chug", "gang_break"],
+         ["four_floor", "verse_doubles"],
+         ["tom_descend", "double_bass", "snare_buildup"],
+         ghost=0.45, ornament=0.45, double_bass=0.5, breakdown=0.5, fill_prob=0.85),
+    # 4) All Distortions: poppier, varied, melodic concept.
+    _era("All Distortions (20)", (130, 185),           # Lowlife / Fall
+         ["four_floor", "two_step", "disco_punk", "verse_basic"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "gang_break"],
+         ["four_floor", "verse_basic"],
+         ["tom_descend", "snare_buildup", "double_bass"],
+         ghost=0.45, ornament=0.5, double_bass=0.3, syncopation=0.4, breakdown=0.3,
+         fill_prob=0.75, humanize=0.9),
+    # 5) Self-Titled: raw energetic return.
+    _era("Self-Titled (24)", (150, 195),               # Dumbstruck Dumbfuck / Sort Yourself Out
+         ["two_step", "four_floor", "skank", "verse_doubles"],
+         ["chorus_crash", "chorus_doublebass"], ["gang_break", "breakdown_chug"],
+         ["two_step", "four_floor"],
+         ["tom_descend", "double_bass", "snare_buildup"],
+         ghost=0.4, ornament=0.45, double_bass=0.35, breakdown=0.35, fill_prob=0.8),
+]
+
 
 PROFILES = {
     # --- Generic / broad default ---
@@ -408,7 +896,8 @@ PROFILES = {
                   ["chorus_crash", "ramones_buzzsaw"], ["halftime"],
                   ["ramones_buzzsaw"],
                   ["ramones_crash", "tom_descend"],
-                  ghost=0.1, ornament=0.2, fill_prob=0.5, humanize=1.0),
+                  ghost=0.1, ornament=0.2, fill_prob=0.5, humanize=1.0,
+                  eras=_RAMONES_ERAS),
 
     # --- '90s skate / melodic punk ---
     "tre_cool": _p("90s_skate", 180,
@@ -425,13 +914,14 @@ PROFILES = {
                     ["chorus_crash", "chorus_open_hat"], ["halftime", "skank"],
                     ["surf", "verse_basic"],
                     ["tom_descend", "triplet_snare", "ramones_crash"],
-                    ghost=0.4, ornament=0.4, fill_prob=0.7),
+                    ghost=0.4, ornament=0.4, fill_prob=0.7, eras=_OFFSPRING_ERAS),
     "mxpx": _p("90s_skate", 195,
                ["skank", "ramones_buzzsaw", "dbeat", "skank"],
                ["chorus_crash", "skank"], ["skank", "halftime"],
                ["ramones_buzzsaw", "skank"],
                ["ramones_crash", "dbeat_roll", "tom_descend"],
-               ghost=0.2, ornament=0.2, fill_prob=0.6, humanize=0.8),
+               ghost=0.2, ornament=0.2, fill_prob=0.6, humanize=0.8,
+               eras=_MXPX_ERAS),
     "skate_punk": _p("90s_skate", 205,
                      ["skank", "dbeat", "ramones_buzzsaw"],
                      ["chorus_crash", "skank"], ["dbeat", "skank"],
@@ -446,18 +936,21 @@ PROFILES = {
                  ["verse_doubles", "verse_16th"],
                  ["triplet_snare", "tom_descend", "marching_toms", "snare_buildup",
                   "halfbar_toms"],
-                 ghost=1.0, ornament=1.0, fill_prob=0.95, humanize=0.8),
+                 ghost=1.0, ornament=1.0, fill_prob=0.95, humanize=0.8,
+                 eras=_BARKER_ERAS),
     "good_charlotte": _p("2000s_mall", 158,
                          ["verse_basic", "four_floor", "verse_basic"],
                          ["chorus_crash", "four_floor"], ["halftime"],
                          ["verse_basic", "four_floor"],
                          ["snare_buildup", "tom_descend"],
-                         ghost=0.4, ornament=0.3, syncopation=0.2, fill_prob=0.7),
+                         ghost=0.4, ornament=0.3, syncopation=0.2, fill_prob=0.7,
+                         eras=_GOOD_CHARLOTTE_ERAS),
     "simple_plan": _p("2000s_mall", 162,
                       ["verse_basic", "surf", "four_floor"],
                       ["chorus_crash", "chorus_open_hat"], ["halftime"],
                       ["verse_basic", "surf"], ["snare_buildup", "tom_descend"],
-                      ghost=0.3, ornament=0.45, fill_prob=0.7, humanize=0.7),
+                      ghost=0.3, ornament=0.45, fill_prob=0.7, humanize=0.7,
+                      eras=_SIMPLE_PLAN_ERAS),
     "new_found_glory": _p("2000s_mall", 178,
                           ["double_bass_verse", "verse_doubles", "skank"],
                           ["chorus_doublebass", "chorus_crash"],
@@ -465,7 +958,8 @@ PROFILES = {
                           ["verse_doubles", "double_bass_verse"],
                           ["double_bass", "tom_descend", "china_choke"],
                           ghost=0.5, ornament=0.4, double_bass=0.7,
-                          breakdown=0.6, fill_prob=0.85, humanize=0.85),
+                          breakdown=0.6, fill_prob=0.85, humanize=0.85,
+                          eras=_NFG_ERAS),
     "sum41": _p("2000s_mall", 188,
                 ["skank", "double_bass_verse", "dbeat", "verse_doubles"],
                 ["chorus_doublebass", "chorus_crash"],
@@ -473,7 +967,7 @@ PROFILES = {
                 ["dbeat", "skank"],
                 ["double_bass", "dbeat_roll", "marching_toms", "blast"],
                 ghost=0.3, ornament=0.4, double_bass=0.6, breakdown=0.5,
-                fill_prob=0.85, humanize=0.85),
+                fill_prob=0.85, humanize=0.85, eras=_SUM41_ERAS),
     "fall_out_boy": _p("2000s_mall", 168,
                        ["disco_punk", "four_floor", "verse_doubles", "double_bass_verse"],
                        ["chorus_crash", "chorus_doublebass"],
@@ -481,14 +975,14 @@ PROFILES = {
                        ["disco_punk", "four_floor"],
                        ["tom_descend", "double_bass", "linear", "snare_buildup"],
                        ghost=0.6, ornament=0.5, double_bass=0.4, syncopation=0.5,
-                       fill_prob=0.85, humanize=0.85),
+                       fill_prob=0.85, humanize=0.85, eras=_FALL_OUT_BOY_ERAS),
     "all_time_low": _p("2000s_mall", 165,
                        ["four_floor", "verse_basic", "verse_doubles"],
                        ["chorus_crash", "chorus_open_hat"], ["halftime"],
                        ["four_floor", "verse_basic"],
                        ["snare_buildup", "tom_descend", "triplet_snare"],
                        ghost=0.4, ornament=0.5, syncopation=0.3, fill_prob=0.75,
-                       humanize=0.8),
+                       humanize=0.8, eras=_ALL_TIME_LOW_ERAS),
     # Relient K — melodic/technical pop-punk through *Forget and Not Slow Down*
     # (2009): busy Dave-Douglas fills, early ska bridge, syncopated melodic feel.
     "relient_k": _p("2000s_mall", 172,
@@ -508,7 +1002,7 @@ PROFILES = {
                    ["halftime", "tribal_toms"], ["tribal_toms", "verse_basic"],
                    ["tom_around", "tom_descend", "linear", "triplet_snare"],
                    ghost=0.7, ornament=0.6, syncopation=0.5, double_bass=0.3,
-                   fill_prob=0.85, humanize=0.9),
+                   fill_prob=0.85, humanize=0.9, eras=_PARAMORE_ERAS),
     "jimmy_eat_world": _p("emo_crossover", 150,
                           ["verse_basic", "surf", "emo_syncopated"],
                           ["chorus_crash", "chorus_open_hat"],
@@ -516,7 +1010,7 @@ PROFILES = {
                           ["verse_basic", "emo_syncopated"],
                           ["tom_descend", "snare_buildup"],
                           ghost=0.6, ornament=0.4, syncopation=0.3,
-                          fill_prob=0.7, humanize=1.0),
+                          fill_prob=0.7, humanize=1.0, eras=_JIMMY_EAT_WORLD_ERAS),
 
     # --- Easycore / 2010s ---
     "easycore": _p("easycore_2010s", 182,
@@ -534,7 +1028,7 @@ PROFILES = {
                     ["verse_basic", "four_floor"],
                     ["tom_descend", "double_bass", "snare_buildup"],
                     ghost=0.6, ornament=0.5, double_bass=0.35, breakdown=0.4,
-                    fill_prob=0.8, humanize=0.9),
+                    fill_prob=0.8, humanize=0.9, eras=_NECK_DEEP_ERAS),
 
     # --- Modern revival / 2020s ---
     "revival_2020s": _p("revival_2020s", 160,
