@@ -767,6 +767,39 @@ _ALL_TIME_LOW_ERAS = [
          ghost=0.45, ornament=0.45, syncopation=0.3, fill_prob=0.75),
 ]
 
+# Paramore — Zac Farro (05–09), session drummer (13), Zac returns (17, 23).
+# Genre mutates hard: pop-punk -> new-wave pop -> synth-funk -> dance-punk.
+_PARAMORE_ERAS = [
+    # 1) Riot!-era: driving emo pop-punk -> mature rock (Zac Farro).
+    _era("Riot!-era (05–09)", (140, 185),              # Misery Business 172 / Ignorance 150
+         ["four_floor", "verse_doubles", "verse_basic", "skank"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "tribal_toms"],
+         ["four_floor", "verse_basic"],
+         ["tom_around", "tom_descend", "triplet_snare"],
+         ghost=0.45, ornament=0.5, syncopation=0.3, double_bass=0.2, fill_prob=0.8),
+    # 2) Self-Titled: eclectic new-wave/gospel pop (session drummer).
+    _era("Self-Titled (13)", (120, 170),               # Still Into You 136 / Ain't It Fun 104
+         ["disco_punk", "four_floor", "verse_basic", "emo_syncopated"],
+         ["chorus_open_hat", "chorus_ride_bell"], ["halftime", "tribal_toms"],
+         ["disco_punk", "verse_basic"],
+         ["tom_around", "tom_descend", "linear"],
+         ghost=0.5, ornament=0.5, syncopation=0.5, fill_prob=0.7, humanize=0.9),
+    # 3) After Laughter: 80s synth-pop/funk, syncopated (Zac returns).
+    _era("After Laughter (17)", (110, 160),            # Hard Times 112 / Rose-Colored Boy
+         ["disco_punk", "four_floor", "emo_syncopated", "trap_hat_modern"],
+         ["chorus_open_hat", "chorus_ride_bell"], ["halftime", "emo_syncopated"],
+         ["disco_punk", "emo_syncopated"],
+         ["linear", "tom_around", "tom_descend"],
+         ghost=0.55, ornament=0.55, syncopation=0.6, fill_prob=0.7, humanize=0.95),
+    # 4) This Is Why: angular post-punk / dance-punk, jittery (Zac).
+    _era("This Is Why (23)", (120, 165),               # This Is Why 130 / The News 150
+         ["disco_punk", "emo_syncopated", "linear_tom", "four_floor"],
+         ["chorus_open_hat", "chorus_crash"], ["halftime", "emo_syncopated"],
+         ["disco_punk", "linear_tom"],
+         ["linear", "tom_around", "tom_descend"],
+         ghost=0.55, ornament=0.6, syncopation=0.6, fill_prob=0.75, humanize=0.9),
+]
+
 
 PROFILES = {
     # --- Generic / broad default ---
@@ -890,7 +923,7 @@ PROFILES = {
                    ["halftime", "tribal_toms"], ["tribal_toms", "verse_basic"],
                    ["tom_around", "tom_descend", "linear", "triplet_snare"],
                    ghost=0.7, ornament=0.6, syncopation=0.5, double_bass=0.3,
-                   fill_prob=0.85, humanize=0.9),
+                   fill_prob=0.85, humanize=0.9, eras=_PARAMORE_ERAS),
     "jimmy_eat_world": _p("emo_crossover", 150,
                           ["verse_basic", "surf", "emo_syncopated"],
                           ["chorus_crash", "chorus_open_hat"],
