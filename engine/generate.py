@@ -728,6 +728,45 @@ _FALL_OUT_BOY_ERAS = [
          ghost=0.55, ornament=0.5, syncopation=0.45, fill_prob=0.75),
 ]
 
+# All Time Low — Rian Dawson throughout; clean pop-punk -> arena/synth -> return.
+_ALL_TIME_LOW_ERAS = [
+    # 1) Breakout: scrappy -> classic fast ATL pop-punk.
+    _era("Breakout (05–09)", (150, 200),               # Dear Maria 165 / Six Feet Under 180
+         ["four_floor", "verse_basic", "verse_doubles", "skank"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime"],
+         ["four_floor", "verse_basic"],
+         ["snare_buildup", "tom_descend", "triplet_snare"],
+         ghost=0.4, ornament=0.4, syncopation=0.3, fill_prob=0.8),
+    # 2) Dirty Work: glossy major-label pop-rock, danceable.
+    _era("Dirty Work (11)", (140, 180),                # I Feel Like Dancin' / Time-Bomb
+         ["four_floor", "disco_punk", "verse_basic"],
+         ["chorus_open_hat", "chorus_crash"], ["halftime"],
+         ["four_floor", "disco_punk"],
+         ["snare_buildup", "tom_descend"],
+         ghost=0.45, ornament=0.45, syncopation=0.3, fill_prob=0.7),
+    # 3) Don't Panic–Future Hearts: roots return -> arena anthemic.
+    _era("Don't Panic–Future Hearts (12–15)", (145, 190),  # Reckless / Kids in the Dark 140
+         ["four_floor", "verse_doubles", "verse_basic", "marching"],
+         ["chorus_crash", "chorus_doublebass"], ["halftime", "marching"],
+         ["four_floor", "verse_doubles"],
+         ["snare_buildup", "tom_descend", "triplet_snare"],
+         ghost=0.45, ornament=0.5, syncopation=0.3, fill_prob=0.8),
+    # 4) Last Young Renegade: synth/electronic, moody pop-rock.
+    _era("Last Young Renegade (17)", (120, 165),       # LYR / Life of the Party
+         ["four_floor", "disco_punk", "trap_hat_modern", "emo_syncopated"],
+         ["chorus_open_hat", "chorus_crash"], ["halftime", "emo_syncopated"],
+         ["four_floor", "disco_punk"],
+         ["snare_buildup", "linear", "tom_descend"],
+         ghost=0.5, ornament=0.5, syncopation=0.5, fill_prob=0.7, humanize=0.9),
+    # 5) Modern: bright pop-punk return -> modern rock.
+    _era("Modern (20–23)", (135, 185),                 # Some Kind of Disaster / Sleepwalking
+         ["four_floor", "verse_doubles", "verse_basic", "trap_hat_modern"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime"],
+         ["four_floor", "verse_basic"],
+         ["snare_buildup", "tom_descend", "triplet_snare"],
+         ghost=0.45, ornament=0.45, syncopation=0.3, fill_prob=0.75),
+]
+
 
 PROFILES = {
     # --- Generic / broad default ---
@@ -831,7 +870,7 @@ PROFILES = {
                        ["four_floor", "verse_basic"],
                        ["snare_buildup", "tom_descend", "triplet_snare"],
                        ghost=0.4, ornament=0.5, syncopation=0.3, fill_prob=0.75,
-                       humanize=0.8),
+                       humanize=0.8, eras=_ALL_TIME_LOW_ERAS),
     # Relient K — melodic/technical pop-punk through *Forget and Not Slow Down*
     # (2009): busy Dave-Douglas fills, early ska bridge, syncopated melodic feel.
     "relient_k": _p("2000s_mall", 172,
