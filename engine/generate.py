@@ -647,6 +647,48 @@ _NFG_ERAS = [
          fill_prob=0.8),
 ]
 
+# Sum 41 — dramatic pop-punk -> metal arc. Stevo (96–13) then Zummo (15–present,
+# the Metal era). Light/bratty early, heaviest late.
+_SUM41_ERAS = [
+    # 1) All Killer: bratty fast skate pop-punk.
+    _era("All Killer (01)", (150, 200),                # Fat Lip 190 / In Too Deep 150
+         ["skank", "verse_doubles", "two_step", "ramones_buzzsaw"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "skank"],
+         ["skank", "verse_doubles"],
+         ["dbeat_roll", "tom_descend", "snare_buildup"],
+         ghost=0.4, ornament=0.4, double_bass=0.2, fill_prob=0.75),
+    # 2) Metal-tinge: heavier, metal riffs, aggressive.
+    _era("Metal-tinge (02–04)", (145, 195),            # Still Waiting / The Hell Song / Pieces
+         ["verse_doubles", "double_bass_verse", "dbeat", "breakdown_chug"],
+         ["chorus_doublebass", "chorus_crash"], ["breakdown_chug", "gang_break"],
+         ["dbeat", "verse_doubles"],
+         ["double_bass", "tom_descend", "china_choke"],
+         ghost=0.45, ornament=0.4, double_bass=0.5, breakdown=0.5, fill_prob=0.8),
+    # 3) Underclass Hero: melodic pop-punk return, political.
+    _era("Underclass Hero (07)", (150, 195),           # Underclass Hero 185 / Walking Disaster
+         ["skank", "verse_doubles", "two_step", "verse_basic"],
+         ["chorus_crash", "chorus_open_hat"], ["halftime", "skank"],
+         ["verse_basic", "verse_doubles"],
+         ["tom_descend", "snare_buildup", "triplet_snare"],
+         ghost=0.45, ornament=0.45, double_bass=0.25, fill_prob=0.75),
+    # 4) Screaming Bloody Murder: dark, heavy, transitional.
+    _era("Screaming Bloody Murder (11)", (140, 200),   # Blood in My Eyes / title track
+         ["double_bass_verse", "dbeat", "breakdown_chug", "verse_doubles"],
+         ["chorus_doublebass", "chorus_crash"], ["breakdown_chug", "blast_beat"],
+         ["dbeat", "double_bass_verse"],
+         ["double_bass", "dbeat_roll", "china_choke"],
+         ghost=0.45, ornament=0.4, double_bass=0.6, breakdown=0.5, syncopation=0.3,
+         fill_prob=0.8, humanize=0.85),
+    # 5) Metal: full metal/hard rock, double-bass (Zummo). Heaviest.
+    _era("Metal (16–24)", (150, 210),                  # Fake My Own Death / War / Landmines
+         ["double_bass_verse", "dbeat", "blast_beat", "breakdown_chug"],
+         ["chorus_doublebass", "chorus_crash"], ["breakdown_chug", "gang_break"],
+         ["double_bass_verse", "dbeat"],
+         ["double_bass", "blast", "china_choke"],
+         ghost=0.5, ornament=0.4, double_bass=0.85, breakdown=0.6, syncopation=0.35,
+         fill_prob=0.85),
+]
+
 
 PROFILES = {
     # --- Generic / broad default ---
@@ -735,7 +777,7 @@ PROFILES = {
                 ["dbeat", "skank"],
                 ["double_bass", "dbeat_roll", "marching_toms", "blast"],
                 ghost=0.3, ornament=0.4, double_bass=0.6, breakdown=0.5,
-                fill_prob=0.85, humanize=0.85),
+                fill_prob=0.85, humanize=0.85, eras=_SUM41_ERAS),
     "fall_out_boy": _p("2000s_mall", 168,
                        ["disco_punk", "four_floor", "verse_doubles", "double_bass_verse"],
                        ["chorus_crash", "chorus_doublebass"],
