@@ -66,6 +66,10 @@ class MainWindow(QMainWindow):
         # Disable the rail while an analysis is in flight (avoid mid-analysis switch).
         self.drop_view.busy.connect(lambda on: self.rail.setDisabled(on))
         self.drop_view.specBuilt.connect(self._on_spec_built)
+        # Both views drive the same (non-thread-safe) controller from worker
+        # threads: an analysis writes the mix/alignment state and invalidates the
+        # preview buffer that a render is about to fill. Never let both run.
+        self.drop_view.busy.connect(self._on_drop_busy)
         # Groove browser <-> arrangement editor wiring. Apply routes into the
         # Generate view's current section, then switches back to show the result;
         # the browser's apply buttons track whether a section is currently live.
@@ -179,6 +183,7 @@ class MainWindow(QMainWindow):
         if theme_mode in ("dark", "light"):
             self._apply_theme(theme_mode)
         self.generate_view.load_current_spec(data.get("selected_section", 0) or 0)
+        self.generate_view.context_audio_loaded()   # restores/clears the mix controls
         self.rail.setCurrentRow(0)
         self._prefs.add_recent(path)
         self._prefs.set_last_project_dir(Path(path).parent)
@@ -250,9 +255,16 @@ class MainWindow(QMainWindow):
             self.browser_view.set_apply_enabled(
                 self.generate_view.current_section_index())
 
+    def _on_drop_busy(self, busy):
+        """Freeze the Generate view's render/transport while an analysis runs."""
+        self.generate_view.set_external_busy(busy)
+
     def _on_spec_built(self):
         self.generate_view.load_current_spec()
         self.generate_view.lock_tempo.setChecked(True)   # keep the dropped song's BPM
+        # The analysed file is now the context track — enable and default the mix
+        # on, so the first thing the user hears is drums over their own audio.
+        self.generate_view.context_audio_loaded()
         self.rail.setCurrentRow(0)             # switch to Generate to correct/play
 
     def _on_use_groove(self, name):

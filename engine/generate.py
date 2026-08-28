@@ -1406,6 +1406,27 @@ def compute_section_markers(spec):
     return markers
 
 
+def section_ticks(spec, index):
+    """Tick length of one section, honouring its `feel` scaling. Same integer
+    maths as `compute_section_markers`' advance — the single source of truth for
+    "how long is this section" (app-layer alignment/preview math calls this
+    rather than re-deriving bar ticks)."""
+    sec = spec["sections"][index]
+    ppq = spec.get("ppq", 480)
+    step_ticks = ppq // (STEPS // 4)
+    num, den = _FEEL.get(sec.get("feel", "normal"), (1, 1))
+    return int(sec.get("bars", 4)) * STEPS * step_ticks * num // den
+
+
+def song_ticks(spec):
+    """Total musical tick length of an arrangement (excludes any render tail)."""
+    sections = spec.get("sections", [])
+    if not sections:
+        return 0
+    markers = compute_section_markers(spec)
+    return markers[-1][0] + section_ticks(spec, len(sections) - 1)
+
+
 def write_midi(events, out_path, tempo=170, ppq=480, markers=None):
     mid = mido.MidiFile(ticks_per_beat=ppq)
     track = mido.MidiTrack()

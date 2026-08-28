@@ -12,9 +12,11 @@ def _view(qtbot):
     return v
 
 
-def test_position_zero_is_none(qtbot):
+def test_position_zero_is_lead_in(qtbot):
+    """Before musical tick 0 the playhead has no step yet — but this is NOT the
+    end of the take (a context mix starts seconds of track before tick 0)."""
     v = _view(qtbot)
-    assert v._position_to_grid(0.0) is None
+    assert v._position_to_grid(0.0) is v.LEAD_IN
 
 
 def test_position_maps_to_section_bar_step(qtbot):
@@ -61,9 +63,21 @@ def test_grid_playhead_gated_to_visible_section_bar(qtbot):
 def test_tick_playhead_stops_timer_at_end(qtbot, monkeypatch):
     v = _view(qtbot)
     v._play_timer.start()
-    monkeypatch.setattr(type(v._c), "playback_position", property(lambda self: 0.0))
-    v._tick_playhead()                      # position 0 -> None -> stop
+    monkeypatch.setattr(type(v._c), "playback_position",
+                        property(lambda self: 9999.0))   # past the arrangement
+    v._tick_playhead()                      # past the end -> None -> stop
     assert not v._play_timer.isActive()
+    assert v.grid._playhead is None
+
+
+def test_tick_playhead_keeps_running_through_the_lead_in(qtbot, monkeypatch):
+    """Regression: treating the lead-in as "ended" killed the playhead for the
+    whole take whenever a count-in or a context-mix offset was in play."""
+    v = _view(qtbot)
+    v._play_timer.start()
+    monkeypatch.setattr(type(v._c), "playback_position", property(lambda self: 0.0))
+    v._tick_playhead()
+    assert v._play_timer.isActive()         # still counting in, not finished
     assert v.grid._playhead is None
 
 

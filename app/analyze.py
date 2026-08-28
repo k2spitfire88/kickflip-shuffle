@@ -29,6 +29,7 @@ DEFAULT_TEMPO = 120.0          # used only when no tempo can be estimated/given
 MIN_SECTION_BARS = 2           # fixed-fallback chunk size, in bars
 BEATS_PER_BAR_DEFAULT = 4      # 4/4 assumption
 BARS_PER_SEGMENT_TARGET = 8    # ~1 structural segment per this many bars
+MAX_LEAD_IN_BARS = 4           # plausible intro before bar 1 (detector has no phase)
 _K_MIN, _K_MAX = 2, 8
 
 
@@ -44,6 +45,8 @@ class AnalysisResult:
     segment_energy: list         # normalised mean RMS per segment, 0..1
     sections: list               # [{role, bars, fill_at_end?, crash_in?}]
     confidence: dict             # {tempo: float 0..1, segmentation: str}
+    lead_in_s: float = 0.0       # seconds before the first downbeat; the
+                                 # arrangement covers [lead_in_s, duration]
 
 
 # ---------------------------------------------------------------------------
@@ -80,8 +83,13 @@ def _label_roles(norm):
 def _alloc_bars(boundary_times, tempo, beats_per_bar):
     """Bars per segment so the counts SUM to the track's total bar length.
 
+    The total is taken over the boundaries' SPAN (`boundary_times[-1] -
+    boundary_times[0]`), not the absolute end, so an arrangement re-based to the
+    first downbeat covers only `[lead_in, duration]`. With `boundary_times[0] ==
+    0.0` (no lead-in) this is identical to the previous absolute-end behaviour.
+
     The boundaries are scaled proportionally onto the total bar count
-    (`round(duration * tempo/60 / beats_per_bar)`) rather than each rounded
+    (`round(span * tempo/60 / beats_per_bar)`) rather than each rounded
     against tempo independently — so the arrangement matches the source length
     regardless of how the boundaries were produced (MFCC novelty or beat-snapped),
     instead of overshooting. Each segment is still floored to >=1 bar; when there
@@ -93,7 +101,8 @@ def _alloc_bars(boundary_times, tempo, beats_per_bar):
     n = len(boundary_times) - 1
     if n <= 0:
         return []
-    total = max(n, round(boundary_times[-1] * tempo / 60.0 / beats_per_bar))
+    span = boundary_times[-1] - boundary_times[0]
+    total = max(n, round(span * tempo / 60.0 / beats_per_bar))
     widths = [boundary_times[i + 1] - boundary_times[i] for i in range(n)]
     if sum(widths) <= 0:                        # degenerate: equal split
         widths = [1.0] * n
@@ -142,7 +151,7 @@ def _nearest(t, candidates):
 # Audio analysis
 # ---------------------------------------------------------------------------
 def analyze_audio(path, *, alignment="fixed_grid", known_tempo=None,
-                  beats_per_bar=BEATS_PER_BAR_DEFAULT):
+                  beats_per_bar=BEATS_PER_BAR_DEFAULT, cut_to_click=False):
     """Analyse an audio file into an editable `AnalysisResult`.
 
     `alignment`: "fixed_grid" (default) derives bars straight from tempo;
@@ -150,6 +159,9 @@ def analyze_audio(path, *, alignment="fixed_grid", known_tempo=None,
     silently downgraded to "fixed_grid" when no beats are found.
     `known_tempo`: override the estimated tempo VALUE (beats are still tracked
     so follow_beats can work).
+    `cut_to_click`: the caller asserts the file starts exactly on beat 1, so the
+    lead-in is forced to 0 and no re-basing happens (mirrors the drop view's
+    "Cut to click" checkbox).
     """
     y, sr = librosa.load(path, mono=True)
     duration = float(librosa.get_duration(y=y, sr=sr))
@@ -218,6 +230,28 @@ def analyze_audio(path, *, alignment="fixed_grid", known_tempo=None,
         else:
             eff_alignment = "fixed_grid"
 
+    # --- lead-in: re-base the arrangement onto the first downbeat ---------
+    # The drums are played back shifted to `lead_in_s` (context mix), so bars
+    # must be allocated over [lead_in_s, duration] — allocating from 0 would put
+    # every section late by exactly the lead-in. Boundaries stay ABSOLUTE times.
+    lead_in_s = 0.0
+    if not cut_to_click and downbeat_times:
+        cand = float(downbeat_times[0])
+        # `downbeat_times` is `beat_times[::beats_per_bar]` with NO phase
+        # estimation, so a mis-tracked first beat could land anywhere. Bound the
+        # lead-in to something musically plausible (a few bars): without this, a
+        # late candidate filters out every interior boundary and collapses a
+        # multi-section arrangement to one section.
+        if 0.0 < cand < min(duration - bar_secs, MAX_LEAD_IN_BARS * bar_secs):
+            lead_in_s = cand
+    if lead_in_s > 0.0:
+        # Drop any boundary within a bar of the new start too — it would make a
+        # sub-bar opening segment that _alloc_bars has to floor up to a full bar.
+        boundary_times = ([lead_in_s]
+                          + [t for t in boundary_times
+                             if lead_in_s + bar_secs <= t < duration]
+                          + [duration])
+
     segments = [(boundary_times[i], boundary_times[i + 1])
                 for i in range(len(boundary_times) - 1)]
 
@@ -240,7 +274,8 @@ def analyze_audio(path, *, alignment="fixed_grid", known_tempo=None,
         alignment=eff_alignment, beat_times=beat_times,
         downbeat_times=list(downbeat_times), segments=segments,
         segment_energy=norm, sections=sections,
-        confidence={"tempo": tempo_conf, "segmentation": seg_conf})
+        confidence={"tempo": tempo_conf, "segmentation": seg_conf},
+        lead_in_s=lead_in_s)
 
 
 def spec_from_analysis(result, profile, *, overrides=None, ppq=480):

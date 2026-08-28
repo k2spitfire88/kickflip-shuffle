@@ -8,7 +8,7 @@ from PySide6.QtCore import Qt, Signal, QSize, QThread, QObject, QTimer
 from PySide6.QtGui import QColor, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout, QLabel, QListWidget, QListWidgetItem,
-    QPushButton, QSpinBox, QComboBox, QFileDialog, QCheckBox,
+    QPushButton, QSpinBox, QComboBox, QFileDialog, QCheckBox, QSlider,
 )
 
 from engine.generate import _AXIS_KEYS as AXIS_KEYS  # single source of axis order
@@ -45,13 +45,15 @@ class _RenderWorker(QObject):
     done = Signal()
     failed = Signal(str)
 
-    def __init__(self, controller):
+    def __init__(self, controller, *, with_context=False):
         super().__init__()
         self._c = controller
+        # Captured on the UI thread: the worker must never read a QWidget.
+        self._with_context = with_context
 
     def run(self):
         try:
-            self._c.render_preview()
+            self._c.render_preview(with_context=self._with_context)
             self.done.emit()
         except Exception as exc:                 # noqa: BLE001 - surfaced to UI
             self.failed.emit(str(exc))
@@ -79,10 +81,20 @@ class GenerateView(QWidget):
         self._play_timer = QTimer(self)     # playhead poll while previewing
         self._play_timer.setInterval(33)    # ~30 Hz
         self._play_timer.timeout.connect(self._tick_playhead)
+        self._controls_enabled = False      # mirrors _set_controls_enabled
+        self._external_busy = False         # a drop-view analysis is in flight
         self._build_ui()
         self._populate_profiles()
         self._populate_output_maps()
+        # Push the persisted mix gains into the controller BEFORE any render, so
+        # the sliders and the controller cannot start out of sync.
+        drums_g = self._prefs.mix_drums_gain()
+        bed_g = self._prefs.mix_bed_gain()
+        self._c.set_mix_gains(drums=drums_g, bed=bed_g)
+        self.drums_gain.setValue(int(round(drums_g * 100)))
+        self.track_gain.setValue(int(round(bed_g * 100)))
         self._set_controls_enabled(False)   # empty state until a profile is picked
+        self._sync_mix_controls()
 
     # ------------------------------------------------------------------ UI
     def _build_ui(self):
@@ -160,9 +172,55 @@ class GenerateView(QWidget):
         self.stop_btn = QPushButton("Stop")
         self.stop_btn.clicked.connect(self._on_stop)
         self.count_in = QCheckBox("Count-in")
-        self.count_in.setToolTip("Prepend a 4-beat click before preview playback.")
+        self.count_in.setToolTip(
+            "4-beat click before the preview. Mixed with a track, the click lays "
+            "over the track's lead-in at the detected tempo instead.")
         self.count_in.toggled.connect(
             lambda on: self._c.set_count_in(4 if on else 0))
+
+        # --- context mix (Phase 9): hear the drums over the dropped track ---
+        self.mix_chk = QCheckBox("Mix with track")
+        self.mix_chk.setToolTip(
+            "Play the drums over the audio you dropped in, aligned to its first "
+            "downbeat, so you can hear whether the riffs match.")
+        self.mix_chk.toggled.connect(self._on_mix_toggled)
+        self.nudge_back = QPushButton("◀")
+        self.nudge_back.setFixedWidth(28)
+        self.nudge_back.setToolTip("Nudge the drums one beat earlier.")
+        self.nudge_back.clicked.connect(lambda: self._on_nudge_beat(-1))
+        self.nudge = QSpinBox()
+        self.nudge.setSuffix(" ms")
+        self.nudge.setSingleStep(5)
+        self.nudge.setToolTip(
+            "Manual alignment correction. The beat detector has no phase "
+            "estimation, so a one-beat fix (◀ ▶) is common.")
+        self.nudge.valueChanged.connect(self._on_nudge_changed)
+        self.nudge_fwd = QPushButton("▶")
+        self.nudge_fwd.setFixedWidth(28)
+        self.nudge_fwd.setToolTip("Nudge the drums one beat later.")
+        self.nudge_fwd.clicked.connect(lambda: self._on_nudge_beat(+1))
+        self.track_gain = QSlider(Qt.Horizontal)
+        self.track_gain.setRange(0, 150)
+        self.track_gain.setFixedWidth(70)
+        self.track_gain.setToolTip("Track level (%).")
+        self.track_gain.valueChanged.connect(
+            lambda v: self._on_gain_changed(bed=v / 100.0))
+        self.drums_gain = QSlider(Qt.Horizontal)
+        self.drums_gain.setRange(0, 150)
+        self.drums_gain.setFixedWidth(70)
+        self.drums_gain.setToolTip("Drums level (%).")
+        self.drums_gain.valueChanged.connect(
+            lambda v: self._on_gain_changed(drums=v / 100.0))
+        self.align_export = QCheckBox("Align export")
+        self.align_export.setToolTip(
+            "Pad the exported .mid so it drops into the DAW where you auditioned "
+            "it against the track.")
+        self.align_export.toggled.connect(
+            lambda on: self._c.set_align_export(on))
+        self.mix_warning = QLabel("")
+        self.mix_warning.setObjectName("mixWarning")
+        self.mix_warning.setWordWrap(True)
+        self.mix_warning.hide()
         self.export_btn = QPushButton("Export .mid")
         self.export_btn.clicked.connect(self._on_export)
         self.export_as_btn = QPushButton("Export As…")
@@ -181,12 +239,23 @@ class GenerateView(QWidget):
         transport.addWidget(self.play_all_btn)
         transport.addWidget(self.stop_btn)
         transport.addWidget(self.count_in)
+        transport.addSpacing(12)
+        transport.addWidget(self.mix_chk)
+        transport.addWidget(self.nudge_back)
+        transport.addWidget(self.nudge)
+        transport.addWidget(self.nudge_fwd)
+        transport.addWidget(QLabel("trk"))
+        transport.addWidget(self.track_gain)
+        transport.addWidget(QLabel("drm"))
+        transport.addWidget(self.drums_gain)
+        transport.addWidget(self.align_export)
         transport.addStretch(1)
         transport.addWidget(self.drag_btn)
         transport.addWidget(self.export_btn)
         transport.addWidget(self.export_as_btn)
         transport.addWidget(self.reveal_btn)
         right.addLayout(transport)
+        right.addWidget(self.mix_warning)
 
         # Arrangement editor (timeline + per-section editor + step grid), shown
         # once a profile is selected.
@@ -300,7 +369,8 @@ class GenerateView(QWidget):
         if self._c.spec is None:
             return
         from .variations import VariationsDialog
-        dlg = VariationsDialog(self._c, self)
+        dlg = VariationsDialog(self._c, self,
+                               with_context=self._mix_enabled())
         dlg.keepSeed.connect(self._on_keep_variation)
         dlg.exec()
 
@@ -368,17 +438,23 @@ class GenerateView(QWidget):
     def _start_render(self, *, target):
         if self._thread is not None:                   # a render is already running
             return                                     # ignore the click; keep its target
+        if self._external_busy:                        # an analysis owns the controller
+            self.status.emit("Analysing — try again when it finishes.")
+            return
         # Assign AFTER the guard on purpose: a click during an in-flight render is
         # ignored entirely (controls are also disabled below), so it must not
         # overwrite the running render's target.
         self._play_target = target
+        # Capture the mix flag BEFORE disabling the controls: `_mix_enabled` reads
+        # the checkbox's ENABLED state, which _set_controls_enabled(False) clears.
+        with_context = self._mix_enabled()
         # Disable ALL mutating controls for the render duration: the worker thread
         # reads/writes controller spec/seed/buffer, so a concurrent Regenerate/BPM/
         # Export would race it (render against a half-swapped spec / clobbered buffer).
         self._set_controls_enabled(False)
         self.status.emit("Rendering preview…")
         self._thread = QThread(self)
-        self._worker = _RenderWorker(self._c)
+        self._worker = _RenderWorker(self._c, with_context=with_context)
         self._worker.moveToThread(self._thread)
         self._thread.started.connect(self._worker.run)
         self._worker.done.connect(self._on_render_done)
@@ -410,6 +486,7 @@ class GenerateView(QWidget):
 
     def _on_render_done(self):
         self._finish_thread()
+        self._refresh_mix_warnings()
         try:
             if self._play_target is not None:
                 self._c.play_section(self._play_target)
@@ -435,8 +512,16 @@ class GenerateView(QWidget):
         self.status.emit("Stopped.")
 
     # ------------------------------------------------------------ playhead
+    LEAD_IN = "lead_in"          # before musical tick 0 (count-in / track lead-in)
+
     def _tick_playhead(self):
         pos = self._position_to_grid(self._c.playback_position)
+        if pos is self.LEAD_IN:
+            # Still ahead of tick 0 — with a context mix this is routinely several
+            # seconds. Keep the timer running (treating it as "ended" would stop
+            # the playhead for the whole take) and show no step yet.
+            self.grid.clear_playhead()
+            return
         if pos is None:                                # ended (or no spec) -> clear
             self._play_timer.stop()
             self.grid.clear_playhead()
@@ -447,17 +532,20 @@ class GenerateView(QWidget):
 
     def _position_to_grid(self, seconds):
         """Map a playback position (seconds) to (section_index, bar_in_section,
-        step 0..15), or None if there is no spec or the position is past the
+        step 0..15); `LEAD_IN` while still before musical tick 0 (count-in or the
+        track's lead-in); None if there is no spec or the position is past the
         arrangement end. 4/4, 16 steps per bar; per-section `feel` scales bar
         width (mirrors the engine's _iter_bars)."""
         spec = self._c.spec
-        if spec is None or seconds <= 0:
-            return None                            # not playing yet
+        if spec is None:
+            return None
+        if seconds <= 0:
+            return self.LEAD_IN                    # not playing yet
         # Map transport position to musical time: drop the count-in head, add the
         # base (0 for the full song; the section start when auditioning a section).
-        seconds = seconds - self._c.preview_offset + self._c.play_base
+        seconds = seconds - self._c.playhead_offset + self._c.play_base
         if seconds < 0:
-            return None                            # still counting in -> no playhead
+            return self.LEAD_IN                    # counting in / track lead-in
         tempo = spec.get("tempo") or 120
         ppq = spec.get("ppq", 480)
         step_ticks = ppq // 4
@@ -639,9 +727,89 @@ class GenerateView(QWidget):
         s = self._c.seed
         self.seed_label.setText(f"seed {s}" if s is not None else "seed —")
 
+    # ------------------------------------------------------- context mix
+    def _mix_enabled(self):
+        """True when the preview should be rendered over the context track."""
+        return bool(self.mix_chk.isEnabled() and self.mix_chk.isChecked())
+
+    def _sync_mix_controls(self):
+        """Enable/disable the mix controls from the controller's state and keep
+        the nudge range at one bar of the current tempo (the detector has no
+        phase estimation, so a full bar of correction must be reachable)."""
+        has = self._c.has_context_audio and self._controls_enabled
+        for w in (self.mix_chk, self.nudge, self.nudge_back, self.nudge_fwd,
+                  self.track_gain, self.drums_gain, self.align_export):
+            w.setEnabled(has)
+        bar_ms = int(round(4 * 60_000.0 / max(1.0, self._c._alignment_tempo())))
+        self.nudge.blockSignals(True)
+        self.nudge.setRange(-bar_ms, bar_ms)
+        self.nudge.setValue(self._c.context_nudge_ms)
+        self.nudge.blockSignals(False)
+        self.align_export.blockSignals(True)
+        self.align_export.setChecked(self._c.align_export)
+        self.align_export.blockSignals(False)
+
+    def context_audio_loaded(self):
+        """Called when a context track is attached (drop-view analysis, project
+        load). Turns the mix on by default and shows the alignment."""
+        self._sync_mix_controls()
+        self.mix_chk.blockSignals(True)
+        self.mix_chk.setChecked(self._c.has_context_audio)
+        self.mix_chk.blockSignals(False)
+        self._refresh_mix_warnings()
+
+    def _on_mix_toggled(self, on):
+        self.status.emit("Mixing preview with the track."
+                         if on else "Preview: drums only.")
+        self._refresh_mix_warnings()
+
+    def _on_nudge_changed(self, value):
+        self._c.set_context_nudge(value)
+        self.status.emit(f"Alignment nudge {value:+d} ms.")
+
+    def _on_nudge_beat(self, direction):
+        ms = self._c.nudge_beat(direction)
+        self.nudge.blockSignals(True)
+        self.nudge.setValue(ms)                 # may clamp to the spinbox range
+        self.nudge.blockSignals(False)
+        self._c.set_context_nudge(self.nudge.value())   # keep both in step
+        self.status.emit(f"Alignment nudge {self.nudge.value():+d} ms.")
+
+    def _on_gain_changed(self, *, drums=None, bed=None):
+        self._c.set_mix_gains(drums=drums, bed=bed)
+        if drums is not None:
+            self._prefs.set_mix_drums_gain(drums)
+        if bed is not None:
+            self._prefs.set_mix_bed_gain(bed)
+
+    def _refresh_mix_warnings(self):
+        """Show the tempo-drift / length-mismatch warnings, or hide the label."""
+        msgs = self._c.mix_warnings if self._mix_enabled() else []
+        if msgs:
+            self.mix_warning.setText("  ".join(msgs))
+            self.mix_warning.show()
+        else:
+            self.mix_warning.clear()
+            self.mix_warning.hide()
+
+    def set_external_busy(self, busy):
+        """Another view is driving the controller from a worker thread (a drop-view
+        analysis). Freeze this view's controls until it finishes — the controller
+        is not thread-safe and an analysis invalidates the preview buffer."""
+        self._external_busy = bool(busy)
+        self._set_controls_enabled(not busy and self._c.spec is not None)
+
     def _set_controls_enabled(self, on):
+        on = bool(on) and not self._external_busy
+        self._controls_enabled = on
         for w in (self.bpm, self.map_combo, self.regen_btn, self.play_btn,
                   self.play_all_btn, self.stop_btn, self.export_btn,
                   self.export_as_btn, self.drag_btn, self.tap_btn,
-                  self.variations_btn, self.lock_tempo):
+                  self.variations_btn, self.lock_tempo, self.count_in,
+                  self.mix_chk, self.align_export, self.nudge,
+                  self.nudge_back, self.nudge_fwd,
+                  self.track_gain, self.drums_gain):
             w.setEnabled(on)
+        # The mix controls additionally require a loaded context track.
+        if on:
+            self._sync_mix_controls()

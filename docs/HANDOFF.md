@@ -29,6 +29,7 @@ Final output is always a `.mid` file dragged onto an **EZ Drummer 3** track (or 
 | Export | `.mid` to a **fixed folder, with "Save As"** on demand. |
 | Output map | **Selectable articulation map. General MIDI = default** (any DAW); **EZ Drummer 3** preset; more in Phase 8. |
 | F2 alignment | **Fixed grid** default (snap to stated tempo); follow-beats toggle. |
+| Context mix (Phase 9) | Drums audition **over the dropped track**, aligned to the analysis lead-in (`AnalysisResult.lead_in_s`) + a manual ±1-bar nudge. Bar allocation is **re-based to the first downbeat** so sections line up. Export **pads by the alignment offset** (default ON with a track). Count-in click **overlays the track's lead-in** at the *detected* tempo. Gains in percent, persisted in `Prefs`. |
 
 ## 3. Repo layout
 
@@ -65,7 +66,8 @@ From `engine/generate.py`:
 - `GROOVES` — ~26 one-bar 16-step patterns. `FILLS` — ~13 fills.
 - `song_from_profile(name, overrides=None) -> spec`
 - `build_song(spec, tempo=None, seed=None) -> events` — each event = `(tick, note, vel, dur)`, GM drums on channel 9 (GM ch.10).
-- `write_midi(events, out_path, tempo=170, ppq=480) -> path`
+- `write_midi(events, out_path, tempo=170, ppq=480, markers=None) -> path`
+- `section_ticks(spec, index)` / `song_ticks(spec)` — feel-aware tick lengths; the single source of truth for "how long is this section/arrangement" (the app's alignment and section-slicing math calls these rather than re-deriving bar ticks).
 - Spec schema: `{ppq, profile, tempo, overrides:{axes...}, sections:[{role|groove, bars, fill|fill_at_end, crash_in}]}`
 
 **Four additive engine extensions the app needs** (see BUILD_PLAN §"Engine extensions"):
@@ -75,6 +77,14 @@ From `engine/generate.py`:
 4. **Half-time shuffle groove** — the app is named for it; audit `GROOVES`, add `half_time_shuffle` if absent, wire to the `barker`/`tre_cool` pools.
 
 **Gotchas:** `build_song`'s `tempo` param is inert (timing comes from `ppq`); tempo applies only at `write_midi`/playback — source it from `spec["tempo"]`.
+
+**Context-mix offset invariant (Phase 9 — do not break):** `Controller._preview_offset`
+is the seconds of the HELD preview buffer that sit before musical tick 0, and is
+**never negative**. `play_section` slices with `head = round(_preview_offset * sr)`;
+a negative head silently becomes a tail-relative slice (`buf[-N:end]`) and plays
+silence with no exception. A nudge earlier than the detected downbeat therefore pads
+the **bed**, not the drums. Separately, `_play_head_s` / `playhead_offset` describes
+the buffer *currently playing* (0 for a section slice) — the playhead reads that one.
 
 ## 5. Art — LOCKED
 
@@ -95,6 +105,7 @@ iconutil -c icns assets/icon/KickflipShuffle.iconset -o assets/icon/KickflipShuf
 - **Download FluidR3_GM.sf2** into `assets/soundfonts/` and confirm MIT terms allow bundling.
 - **Fonts:** add Space Grotesk, IBM Plex Mono, Special Elite, Saira Stencil One to `assets/fonts/`; confirm each OFL permits app bundling.
 - **Confirm the per-section axes shape** with the owner before touching `build_song`.
+- **Bar-phase detection** — `analyze.py`'s `downbeat_times = beat_times[::4]` has no phase estimation, so the context-mix auto offset is a starting guess (the ◀/▶ beat nudge is the intended correction). Real downbeat/bar-phase detection is the obvious next improvement.
 - **TM clearance** for "Kickflip Shuffle" only needed if distributing commercially.
 
 ## 7. Next action
@@ -105,7 +116,7 @@ Start **Phase 0 → Phase 1** of `docs/BUILD_PLAN.md`:
 
 Then controller → analyze → playback → UI (vertical-slice: Generate first) → wire/persistence → py2app.
 
-## 8. Packaging (Phase 7 — beta 0.9.0)
+## 8. Packaging (Phase 7 — beta 0.9.1)
 
 Build the unsigned `.app`:
 
@@ -116,7 +127,7 @@ rm -rf build dist
 # -> dist/Kickflip Shuffle.app  (~1.6 GB — PySide6 + librosa/numba/scipy + sf2)
 ```
 
-- **Bundle id** `com.kickflipshuffle.app`, **version** `0.9.0` (beta). Config in `setup.py`.
+- **Bundle id** `com.kickflipshuffle.app`, **version** `0.9.1` (beta). Config in `setup.py`.
 - **Native deps:** `setup.py` lists `/opt/homebrew/lib/libfluidsynth.3.dylib` under
   `frameworks`; py2app/macholib relocates its whole transitive tree (glib, sndfile,
   portaudio, readline, FLAC, vorbis, …) to `@executable_path/../Frameworks` — verified
