@@ -13,6 +13,8 @@ _RECENT_KEY = "recent_files"
 _EXPORT_DIR_KEY = "export_dir"
 _PROJECT_DIR_KEY = "last_project_dir"
 _THEME_KEY = "theme"
+_MIX_DRUMS_GAIN_KEY = "mix_drums_gain"
+_MIX_BED_GAIN_KEY = "mix_bed_gain"
 _RECENT_CAP = 10
 _DEFAULT_EXPORT_DIR = Path.home() / "Music" / "Kickflip Shuffle"
 
@@ -56,6 +58,29 @@ class Prefs:
 
     def set_last_project_dir(self, path):
         self._s.setValue(_PROJECT_DIR_KEY, str(path))
+
+    # -------------------------------------------------------- mix gains
+    def mix_drums_gain(self):
+        """Preview drums level (1.0 = unity)."""
+        return self._gain(_MIX_DRUMS_GAIN_KEY, 1.0)
+
+    def set_mix_drums_gain(self, value):
+        self._s.setValue(_MIX_DRUMS_GAIN_KEY, float(value))
+
+    def mix_bed_gain(self):
+        """Preview context-track level (0.8 = the historical default)."""
+        return self._gain(_MIX_BED_GAIN_KEY, 0.8)
+
+    def set_mix_bed_gain(self, value):
+        self._s.setValue(_MIX_BED_GAIN_KEY, float(value))
+
+    def _gain(self, key, default):
+        """QSettings round-trips through strings on some backends, and a hand-
+        edited value could be anything — fall back rather than crash startup."""
+        try:
+            return max(0.0, float(self._s.value(key, default)))
+        except (TypeError, ValueError):
+            return default
 
     # ------------------------------------------------------------- theme
     def theme(self):

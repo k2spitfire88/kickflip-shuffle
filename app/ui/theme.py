@@ -81,6 +81,7 @@ def _build_qss(p, grit=None):
         border: 1px solid {p['line']}; border-radius: 8px; }}
     QLabel#title {{ color: {p['accent']}; font-weight: 700; }}
     QLabel#muted {{ color: {p['muted']}; }}
+    QLabel#mixWarning {{ color: {p['alert']}; padding: 2px 4px; }}
     QListWidget::item {{ padding: 6px 8px; }}
     QListWidget::item:selected {{ background: {p['accent']}; color: {p['on_accent']}; }}
     QPushButton {{ background: {p['panel2']}; color: {p['fg']};

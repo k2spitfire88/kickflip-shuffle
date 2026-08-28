@@ -23,6 +23,7 @@ import soundfile as sf
 
 from app._bootstrap import resource_root
 DEFAULT_SOUNDFONT = resource_root() / "assets/soundfonts/FluidR3_GM.sf2"
+RENDER_TAIL_S = 2.0       # default decay tail rendered after the last note
 
 
 def click_track(beats, tempo, *, sample_rate=44100, freq=1000.0):
@@ -49,7 +50,7 @@ _INT16_FULL_SCALE = 32768.0
 
 
 def render_events(events, *, tempo, ppq, sample_rate=44100,
-                  soundfont=DEFAULT_SOUNDFONT, tail=2.0):
+                  soundfont=DEFAULT_SOUNDFONT, tail=RENDER_TAIL_S):
     """Render `(tick, note, vel, dur)` events to a stereo float32 buffer (n, 2).
 
     Events carry concrete MIDI notes on the drum channel (already resolved via an
@@ -132,16 +133,56 @@ def load_audio(path, *, sample_rate=44100):
     return np.ascontiguousarray(data)
 
 
-def mix(drums, bed, *, drums_gain=1.0, bed_gain=0.8):
+def peak_normalize(buf):
+    """Scale `buf` down only if it would clip (|x| > 1). Split out of `mix` so a
+    caller that sums more in afterwards (the count-in click) can normalise once,
+    over the FINAL signal, instead of clipping past a premature normalisation."""
+    peak = float(np.max(np.abs(buf))) if buf.size else 0.0
+    return buf / peak if peak > 1.0 else buf
+
+
+def mix(drums, bed, *, drums_gain=1.0, bed_gain=0.8,
+        drums_pad_frames=0, bed_pad_frames=0, normalize=True):
     """Sum two stereo float32 buffers (pad shorter to longer). Peak-normalise only
-    if the result would clip (|x| > 1)."""
-    n = max(len(drums), len(bed))
+    if the result would clip (|x| > 1).
+
+    `drums_pad_frames` / `bed_pad_frames` front-pad the respective buffer with
+    silence before summing — this is how the drums are aligned to the track's
+    first downbeat (positive offset pads the drums; a negative offset, i.e. a
+    nudge earlier than the detected downbeat, pads the bed instead). Padding is
+    in FRAMES, not seconds: the caller owns all sample-rate math so there is no
+    second rate default here that could silently disagree with the render rate.
+
+    `normalize=False` defers the clip check to the caller (see `peak_normalize`).
+
+    Peak-normalisation scales drums and bed equally, so the drums:bed ratio is
+    always exactly `drums_gain / bed_gain` — raising one gain can never attenuate
+    that side relative to the other (guarded by a test).
+    """
+    dp = max(0, int(drums_pad_frames))
+    bp = max(0, int(bed_pad_frames))
+    n = max(dp + len(drums), bp + len(bed))
     out = np.zeros((n, 2), dtype=np.float32)
-    out[:len(drums)] += drums.astype(np.float32) * drums_gain
-    out[:len(bed)] += bed.astype(np.float32) * bed_gain
-    peak = float(np.max(np.abs(out))) if out.size else 0.0
-    if peak > 1.0:
-        out = out / peak
+    out[dp:dp + len(drums)] += drums.astype(np.float32) * drums_gain
+    out[bp:bp + len(bed)] += bed.astype(np.float32) * bed_gain
+    return peak_normalize(out) if normalize else out
+
+
+def overlay(dest, src, at_frames):
+    """Sum `src` into a COPY of `dest` starting at frame `at_frames`, clipping
+    `src` at both ends of `dest`. Used to lay the count-in click over the track's
+    lead-in (rather than prepending it, which would shift the track).
+
+    `at_frames` may be negative (src starts before dest). Tolerates the 1-frame
+    degenerate buffer `click_track` returns for beats<=0. `dest` is never grown.
+    """
+    out = np.array(dest, dtype=np.float32, copy=True)
+    at = int(at_frames)
+    src_start = max(0, -at)                       # clip src head
+    dst_start = max(0, at)
+    n = min(len(src) - src_start, len(out) - dst_start)
+    if n > 0:
+        out[dst_start:dst_start + n] += src[src_start:src_start + n].astype(np.float32)
     return out
 
 

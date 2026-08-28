@@ -144,6 +144,57 @@ def test_follow_beats_downgrades_when_no_beats(tmp_path, monkeypatch):
     assert r.confidence["tempo"] == 0.0
 
 
+# --- Phase 9: lead-in re-basing --------------------------------------------
+
+def _force_beats(monkeypatch, first_beat, *, bpm=120, sr=22050, n=64):
+    """Force beat_track to report beats starting at `first_beat` seconds."""
+    import librosa
+    times = first_beat + np.arange(n) * (60.0 / bpm)
+    frames = librosa.time_to_frames(times, sr=sr)
+    monkeypatch.setattr(librosa.beat, "beat_track",
+                        lambda **kw: (float(bpm), np.asarray(frames)))
+
+
+def test_lead_in_rebases_arrangement(tmp_path, monkeypatch):
+    """Plan test 6 — bars are allocated over [lead_in, duration], and section
+    boundaries start at the first downbeat rather than at t=0."""
+    _force_beats(monkeypatch, 4.0)
+    p = str(tmp_path / "leadin.wav")
+    _write_clicks(p, bpm=120, dur=20.0)
+    r = analyze_audio(p, known_tempo=120)
+
+    # frame quantisation (hop 512 @ 22050 Hz) -> ~23 ms granularity
+    assert r.lead_in_s == pytest.approx(4.0, abs=0.03)
+    assert r.segments[0][0] == pytest.approx(4.0, abs=0.03)   # starts there
+    assert r.segments[-1][1] == pytest.approx(r.duration)
+    # Independently: 20 s of audio at 120 BPM 4/4 is 2 s/bar; re-based onto a 4 s
+    # lead-in leaves a 16 s span = 8 bars. (Stated as a literal on purpose — the
+    # implementation's own formula would make this a change-detector.)
+    assert sum(s["bars"] for s in r.sections) == 8
+
+
+def test_cut_to_click_forces_zero_lead_in(tmp_path, monkeypatch):
+    """Plan test 7 — cut_to_click asserts the file starts on beat 1."""
+    _force_beats(monkeypatch, 4.0)
+    p = str(tmp_path / "cut.wav")
+    _write_clicks(p, bpm=120, dur=20.0)
+    r = analyze_audio(p, known_tempo=120, cut_to_click=True)
+
+    assert r.lead_in_s == 0.0
+    assert r.segments[0][0] == 0.0
+    # Full 20 s at 2 s/bar = 10 bars (no lead-in removed).
+    assert sum(s["bars"] for s in r.sections) == 10
+
+
+def test_no_lead_in_when_first_beat_is_zero(tmp_path, monkeypatch):
+    """Regression: a track already on the grid must not be re-based."""
+    _force_beats(monkeypatch, 0.0)
+    p = str(tmp_path / "ongrid.wav")
+    _write_clicks(p, bpm=120, dur=12.0)
+    r = analyze_audio(p, known_tempo=120)
+    assert r.lead_in_s == 0.0 and r.segments[0][0] == 0.0
+
+
 @pytest.mark.slow
 def test_real_pipeline_smoke(tmp_path):
     p = str(tmp_path / "click120.wav")

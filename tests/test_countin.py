@@ -65,5 +65,5 @@ def test_playhead_skips_count_in(qtbot, monkeypatch):
     v._c.set_count_in(4)
     v._c.render_preview(sample_rate=1000)
     off = v._c.preview_offset
-    assert v._position_to_grid(off * 0.5) is None           # during count-in
+    assert v._position_to_grid(off * 0.5) is v.LEAD_IN     # during count-in
     assert v._position_to_grid(off + 0.001) == (0, 0, 0)    # first musical step

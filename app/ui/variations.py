@@ -19,15 +19,22 @@ class _VariationsWorker(QObject):
     done = Signal(list)          # [(seed, buffer)]
     failed = Signal(str)
 
-    def __init__(self, controller, seeds, sample_rate=44100):
+    def __init__(self, controller, seeds, sample_rate=44100, with_context=False,
+                 context=None):
         super().__init__()
         self._c = controller
         self._seeds = seeds
         self._sr = sample_rate
+        # Both captured on the UI thread — a worker must never read a QWidget, nor
+        # any mutable controller mix state (`context` is an immutable snapshot).
+        self._with_context = with_context
+        self._context = context
 
     def run(self):
         try:
-            out = [(s, self._c.render_variation(s, sample_rate=self._sr))
+            out = [(s, self._c.render_variation(s, sample_rate=self._sr,
+                                                with_context=self._with_context,
+                                                context=self._context))
                    for s in self._seeds]                # serial -> no state race
             self.done.emit(out)
         except Exception as exc:                        # noqa: BLE001 - to UI
@@ -37,9 +44,13 @@ class _VariationsWorker(QObject):
 class VariationsDialog(QDialog):
     keepSeed = Signal(object)    # user adopted a variation's seed (64-bit -> object)
 
-    def __init__(self, controller, parent=None):
+    def __init__(self, controller, parent=None, with_context=False):
         super().__init__(parent)
         self._c = controller
+        # Passed in by the caller (read from its checkbox on the UI thread) so no
+        # worker ever touches a widget. Each variation mixes only the drums' own
+        # span of the track, not a full copy of it per seed.
+        self._with_context = bool(with_context)
         self._results = []       # [(seed, buffer)]
         self._thread = None
         self._worker = None
@@ -89,7 +100,11 @@ class VariationsDialog(QDialog):
         self.gen_btn.setEnabled(False)
         self.status.setText(f"Rendering {n} variations…")
         self._thread = QThread(self)
-        self._worker = _VariationsWorker(self._c, seeds)
+        # Snapshot the mix state HERE, on the UI thread.
+        snap = (self._c.context_snapshot() if self._with_context else None)
+        self._worker = _VariationsWorker(self._c, seeds,
+                                        with_context=self._with_context,
+                                        context=snap)
         self._worker.moveToThread(self._thread)
         self._thread.started.connect(self._worker.run)
         self._worker.done.connect(self._on_done)

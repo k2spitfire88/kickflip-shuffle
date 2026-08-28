@@ -26,19 +26,30 @@ def _is_audio_url(url):
 class _AnalyzeWorker(QObject):
     done = Signal(object)          # AnalysisResult
     failed = Signal(str)
+    context_failed = Signal(str)   # audio decoded for playback, but not for mixing
 
-    def __init__(self, controller, path, alignment, known_tempo):
+    def __init__(self, controller, path, alignment, known_tempo,
+                 cut_to_click=False):
         super().__init__()
         self._c = controller
         self._path = path
         self._alignment = alignment
         self._known_tempo = known_tempo
+        self._cut_to_click = cut_to_click
 
     def run(self):
         try:
             result = self._c.analyze_audio(
                 self._path, alignment=self._alignment,
-                known_tempo=self._known_tempo)
+                known_tempo=self._known_tempo,
+                cut_to_click=self._cut_to_click)
+            # Decode the context track HERE, on the worker thread: a full song
+            # decode (plus a resample for any non-44.1k source) would freeze the
+            # UI for seconds if done in the done-handler.
+            try:
+                self._c.load_context_audio(self._path)
+            except Exception as exc:           # noqa: BLE001 - non-fatal
+                self.context_failed.emit(str(exc))
             self.done.emit(result)
         except Exception as exc:               # noqa: BLE001 - surfaced to UI
             self.failed.emit(str(exc))
@@ -188,11 +199,13 @@ class DropView(QWidget):
         self.status.emit("Analysing…")
         self._thread = QThread(self)
         self._worker = _AnalyzeWorker(self._c, self._path,
-                                      self.align.currentText(), self._known_tempo())
+                                      self.align.currentText(), self._known_tempo(),
+                                      cut_to_click=self.cut_click.isChecked())
         self._worker.moveToThread(self._thread)
         self._thread.started.connect(self._worker.run)
         self._worker.done.connect(self._on_done)
         self._worker.failed.connect(self._on_failed)
+        self._worker.context_failed.connect(self._on_context_failed)
         self._update_enabled()
         self._thread.start()
 
@@ -216,6 +229,10 @@ class DropView(QWidget):
     def _on_failed(self, message):
         self._finish_thread()
         self.status.emit(f"Analysis failed: {message}")
+
+    def _on_context_failed(self, message):
+        """The analysis still succeeded — only the mix bed is unavailable."""
+        self.status.emit(f"Analysed, but the track can't be mixed in: {message}")
 
     def _show_result(self, r):
         self.detected.setText(

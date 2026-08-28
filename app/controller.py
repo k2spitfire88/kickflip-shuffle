@@ -52,9 +52,22 @@ class Controller:
         self._analysis = None
         self._context_audio = None
         self._context_sr = None
+        self._context_path = None       # source file, for .ppd persistence
+        self._context_len_s = 0.0
+        self._auto_offset_s = 0.0       # analysis lead-in (first downbeat)
+        self._context_nudge_ms = 0      # manual correction, +/- one bar
+        self._drums_gain = 1.0
+        self._bed_gain = 0.8
+        self._detected_tempo = None     # tempo the analysis reported (drift warning)
+        self._align_export = True       # pad exported .mid by the alignment offset
+        self._context_error = None      # last context-load failure (shown in warnings)
         self._preview_buf = None
         self._preview_sr = None
-        self._preview_offset = 0.0      # seconds of count-in at the head of the buffer
+        # Seconds of buffer BEFORE musical tick 0 — count-in when playing dry, the
+        # alignment offset (+ any count-in deficit) when mixed. NEVER negative:
+        # play_section slices with it and a negative head is a tail-relative slice.
+        self._preview_offset = 0.0
+        self._play_head_s = 0.0         # head used by the LAST play_section slice
         self._play_base = 0.0           # musical seconds the current play buffer starts at
         self._count_in = 0              # preview count-in beats (0 = off)
         self._player = None
@@ -507,13 +520,20 @@ class Controller:
     # ------------------------------------------------------------------
     # Export (selected output map; explicit destination this phase)
     # ------------------------------------------------------------------
-    def export(self, out_path, *, spec=None, output_map=None, seed=None):
+    def export(self, out_path, *, spec=None, output_map=None, seed=None,
+               align=None):
         """Render ``spec`` through the selected output map and write a ``.mid``.
 
         Reproduces the previewed generation: uses the held seed (an explicit
         ``seed`` is transient and does NOT overwrite the held one — export is a
         sink). Tempo is sourced from the spec (build_song's tempo param is
         inert) and applied at ``write_midi``.
+
+        ``align`` (default: the held ``align_export``) shifts every event — and
+        every section marker — later by the context-mix alignment offset, so the
+        ``.mid`` dropped into the DAW lands where it was auditioned against the
+        track. With no context track loaded the shift is 0 and the output is
+        byte-identical to an unaligned export.
         """
         spec = spec if spec is not None else self._spec
         if spec is None:
@@ -527,6 +547,13 @@ class Controller:
         ppq = spec.get("ppq", 480)
         events = engine.build_song(spec, seed=s, output_map=omap)
         markers = engine.compute_section_markers(spec)   # DAW-timeline section markers
+        shift = self._export_offset_ticks(
+            spec, float(tempo), ppq,
+            self._align_export if align is None else align)
+        if shift:
+            events = [(tick + shift, note, vel, dur)
+                      for tick, note, vel, dur in events]
+            markers = [(tick + shift, label) for tick, label in markers]
         return engine.write_midi(events, out_path, tempo=tempo, ppq=ppq,
                                  markers=markers)
 
@@ -544,6 +571,19 @@ class Controller:
             "seed": self._seed,
             "output_map": self._output_map,
         }
+        if self._context_path is not None:
+            # Additive, optional — no PROJECT_VERSION bump (the version check is
+            # strict equality, so bumping would make every existing .ppd
+            # unloadable). `auto_offset_s` must be persisted too: load_project
+            # does not re-run analysis, so the nudge alone would restore a
+            # silently wrong alignment.
+            data["context_audio"] = {
+                "path": self._context_path,
+                "nudge_ms": self._context_nudge_ms,
+                "auto_offset_s": self._auto_offset_s,
+                "detected_tempo": self._detected_tempo,
+            }
+        data["align_export"] = self._align_export
         if extra:
             data.update(extra)
         return data
@@ -585,7 +625,36 @@ class Controller:
         self._output_map = omap
         self._reset_history()
         self._invalidate_preview()
+        self._align_export = bool(data.get("align_export", True))
+        self._restore_context_audio(data.get("context_audio"), warnings)
         return {**data, "output_map": omap, "warnings": warnings}
+
+    def _restore_context_audio(self, block, warnings):
+        """Re-attach a saved context track. NEVER raises: the audio libs are
+        imported lazily inside load_context_audio, so a machine without
+        fluidsynth/portaudio/soundfile — or a moved audio file — must degrade to
+        a warning, exactly like an unknown output map."""
+        self.unload_context_audio()
+        self._auto_offset_s = 0.0
+        self._context_nudge_ms = 0
+        self._detected_tempo = None
+        self._context_error = None
+        if not isinstance(block, dict):
+            return
+        self._auto_offset_s = float(block.get("auto_offset_s") or 0.0)
+        self._context_nudge_ms = int(block.get("nudge_ms") or 0)
+        dt = block.get("detected_tempo")
+        self._detected_tempo = float(dt) if dt else None
+        path = block.get("path")
+        if not path:
+            return
+        try:
+            self.load_context_audio(path)
+        except Exception as exc:                       # noqa: BLE001 - see docstring
+            # Remembered so `mix_warnings` keeps surfacing it — an export would
+            # otherwise silently lose the alignment the project was saved with.
+            self._context_error = f"context audio {path!r} could not be loaded: {exc}"
+            warnings.append(self._context_error)
 
     def write_note_ladder(self, out_path, *, output_map=None):
         """Emit a one-hit-per-role ladder ``.mid`` for auditing an output map's
@@ -603,11 +672,21 @@ class Controller:
         return self._analysis
 
     def analyze_audio(self, path, *, alignment="fixed_grid", known_tempo=None,
-                      beats_per_bar=analyze.BEATS_PER_BAR_DEFAULT):
-        """Analyse an audio file into an editable AnalysisResult; hold it."""
+                      beats_per_bar=analyze.BEATS_PER_BAR_DEFAULT,
+                      cut_to_click=False):
+        """Analyse an audio file into an editable AnalysisResult; hold it.
+
+        Also captures the alignment context the mix needs: the lead-in (seconds
+        to the first downbeat, which the drums are shifted by) and the detected
+        tempo (the reference for the drift warning and the count-in click).
+        """
         self._analysis = analyze.analyze_audio(
             path, alignment=alignment, known_tempo=known_tempo,
-            beats_per_bar=beats_per_bar)
+            beats_per_bar=beats_per_bar, cut_to_click=cut_to_click)
+        self._auto_offset_s = float(self._analysis.lead_in_s)
+        self._detected_tempo = float(self._analysis.tempo)
+        self._context_nudge_ms = 0            # a new analysis resets the manual fix
+        self._invalidate_preview()
         return self._analysis
 
     def spec_from_analysis(self, profile, *, result=None, overrides=None):
@@ -623,12 +702,146 @@ class Controller:
     # ------------------------------------------------------------------
     # Playback (F4) — offline render -> buffer -> sounddevice transport
     # ------------------------------------------------------------------
-    def load_context_audio(self, path, *, sample_rate=44100):
-        """Load an audio track to mix previews over ('hear it over my track')."""
+    def load_context_audio(self, path, *, sample_rate=44100, buffer=None):
+        """Load an audio track to mix previews over ('hear it over my track').
+
+        `buffer` accepts an already-decoded buffer (the drop view decodes on its
+        analysis worker thread so the UI never blocks on a full-song decode).
+        """
         from . import playback  # lazy: keep the MIDI path usable without audio libs
-        self._context_audio = playback.load_audio(path, sample_rate=sample_rate)
+        if buffer is None:
+            buffer = playback.load_audio(path, sample_rate=sample_rate)
+        self._context_audio = buffer
         self._context_sr = sample_rate
+        self._context_path = str(path) if path is not None else None
+        self._context_len_s = len(buffer) / float(sample_rate) if sample_rate else 0.0
+        self._context_error = None
+        self._invalidate_preview()
         return self._context_audio
+
+    def unload_context_audio(self):
+        """Drop the loaded context track (mix controls disable again)."""
+        self._context_audio = None
+        self._context_sr = None
+        self._context_path = None
+        self._context_len_s = 0.0
+        self._invalidate_preview()
+
+    @property
+    def has_context_audio(self):
+        return self._context_audio is not None
+
+    @property
+    def context_path(self):
+        return self._context_path
+
+    @property
+    def context_offset_s(self):
+        """Seconds from the start of the track to musical tick 0 of the drums:
+        the analysis lead-in plus the manual nudge. May be negative (nudged
+        earlier than the detected downbeat)."""
+        return self._auto_offset_s + self._context_nudge_ms / 1000.0
+
+    @property
+    def context_nudge_ms(self):
+        return self._context_nudge_ms
+
+    def set_context_nudge(self, ms):
+        """Manual alignment correction in milliseconds (+/- one bar, clamped by
+        the UI). Invalidates the preview."""
+        self._context_nudge_ms = int(ms)
+        self._invalidate_preview()
+        return self._context_nudge_ms
+
+    def nudge_beat(self, direction):
+        """Shift the alignment by exactly one beat at the current tempo. The beat
+        detector has no phase estimation, so a one-beat correction is the common
+        fix (see PHASE9_plan Risk A)."""
+        tempo = self._alignment_tempo()
+        self._context_nudge_ms += int(round((1 if direction >= 0 else -1)
+                                            * 60_000.0 / tempo))
+        self._invalidate_preview()
+        return self._context_nudge_ms
+
+    def _alignment_tempo(self):
+        """Tempo the alignment maths runs at: the DETECTED tempo when known (the
+        track's own grid), else the spec's."""
+        if self._detected_tempo:
+            return float(self._detected_tempo)
+        if self._spec is not None:
+            t = self._spec.get("tempo")
+            if t:
+                return float(t)
+            return float(engine.PROFILES[self._spec["profile"]]["tempo"])
+        return 120.0
+
+    @property
+    def mix_gains(self):
+        return {"drums": self._drums_gain, "bed": self._bed_gain}
+
+    def set_mix_gains(self, *, drums=None, bed=None):
+        """Set the preview mix gains (1.0 = unity). Invalidates the preview."""
+        if drums is not None:
+            self._drums_gain = max(0.0, float(drums))
+        if bed is not None:
+            self._bed_gain = max(0.0, float(bed))
+        self._invalidate_preview()
+        return self.mix_gains
+
+    @property
+    def align_export(self):
+        return self._align_export
+
+    def set_align_export(self, on):
+        """Whether export pads the .mid by the alignment offset so it drops into
+        the DAW where it was auditioned."""
+        self._align_export = bool(on)
+        return self._align_export
+
+    def _export_offset_ticks(self, spec, tempo, ppq, align):
+        """Ticks of silence to prepend on export so the .mid lands under the
+        track. Only ever positive — a negative alignment means the drums start
+        before the file does, which no amount of padding can express."""
+        if not align or not self.has_context_audio:
+            return 0
+        offset = max(0.0, self.context_offset_s)
+        return int(round(offset * ppq * tempo / 60.0))
+
+    @property
+    def mix_warnings(self):
+        """User-facing warnings about the current mix (empty when all is well)."""
+        out = []
+        if self._context_error:
+            out.append(self._context_error)
+        if not self.has_context_audio or self._spec is None:
+            return out
+        tempo = self._spec.get("tempo") or engine.PROFILES[self._spec["profile"]]["tempo"]
+        tempo = float(tempo)
+        if self._detected_tempo:
+            # Express drift as time ACCUMULATED over the track, not raw BPM: a
+            # 0.5 BPM error matters over 4 minutes and not at all over 20 seconds.
+            drift_s = (abs(tempo - self._detected_tempo) / self._detected_tempo
+                       * self._context_len_s)
+            if drift_s > 0.5 * 60.0 / tempo:          # half a beat
+                out.append(
+                    f"Tempo drift: {tempo:g} BPM vs {self._detected_tempo:.1f} "
+                    f"detected — drums drift ~{drift_s:.1f}s over the track.")
+        drums_len_s = self._drums_length_s(self._spec)
+        gap = abs(drums_len_s - max(0.0, self._context_len_s - max(0.0, self.context_offset_s)))
+        bar_s = 4 * 60.0 / tempo
+        if gap > bar_s:
+            out.append(
+                f"Length mismatch: drums {drums_len_s:.0f}s vs track "
+                f"{self._context_len_s:.0f}s ({gap:.0f}s apart).")
+        return out
+
+    def _drums_length_s(self, spec):
+        """Musical length of the arrangement in seconds (excludes render tail)."""
+        if not spec.get("sections"):
+            return 0.0
+        tempo = spec.get("tempo") or engine.PROFILES[spec["profile"]]["tempo"]
+        ppq = spec.get("ppq", 480)
+        return engine.song_ticks(spec) * 60.0 / (float(tempo) * ppq)
 
     def render_preview(self, spec=None, *, seed=None, sample_rate=44100,
                        with_context=False, count_in=None):
@@ -651,12 +864,13 @@ class Controller:
         tempo = spec.get("tempo") or engine.PROFILES[spec["profile"]]["tempo"]
         buf = playback.render_events(
             events, tempo=tempo, ppq=spec.get("ppq", 480), sample_rate=sample_rate)
-        if with_context and self._context_audio is not None:
-            buf = playback.mix(buf, self._context_audio)
-        # Count-in is PREVIEW ONLY — prepended to the buffer here, never in export
-        # (export uses build_song/write_midi, not this path).
+        # Count-in is PREVIEW ONLY — never in export (export uses
+        # build_song/write_midi, not this path).
         ci = self._count_in if count_in is None else int(count_in)
-        if ci > 0:
+        if with_context and self._context_audio is not None:
+            buf, self._preview_offset = self._mix_with_context(
+                playback, buf, ci, sample_rate)
+        elif ci > 0:
             import numpy as np
             click = playback.click_track(ci, tempo, sample_rate=sample_rate)
             buf = np.concatenate([click, buf])
@@ -664,7 +878,62 @@ class Controller:
         else:
             self._preview_offset = 0.0
         self._preview_buf, self._preview_sr = buf, sample_rate
+        # The held buffer is what play() will load, so the playhead head matches
+        # it until a play_section slice replaces it.
+        self._play_head_s = self._preview_offset
         return buf
+
+    def _context_bed(self, playback, sample_rate):
+        """The context track at `sample_rate`, re-loading if the held buffer was
+        decoded at a different rate (mixing buffers of differing rates would play
+        the track at the wrong speed and scale every offset wrongly)."""
+        if self._context_sr == sample_rate or self._context_audio is None:
+            return self._context_audio
+        if self._context_path is None:
+            raise ValueError(
+                f"context audio is at {self._context_sr} Hz but the preview "
+                f"renders at {sample_rate} Hz, and the source path is unknown")
+        self._context_audio = playback.load_audio(self._context_path,
+                                                  sample_rate=sample_rate)
+        self._context_sr = sample_rate
+        self._context_len_s = len(self._context_audio) / float(sample_rate)
+        return self._context_audio
+
+    def _mix_with_context(self, playback, drums, count_in_beats, sample_rate):
+        """Mix the rendered drums over the context track, aligned to the track's
+        first downbeat. Returns `(buffer, preview_offset_seconds)`.
+
+        Offset bookkeeping (PHASE9_plan §A) — `preview_offset` is the seconds of
+        buffer before musical tick 0 and is NEVER negative:
+
+            o         = context_offset_s            (may be negative)
+            deficit   = count-in that does not fit in the lead-in
+            drums_pad = max(0, o) + deficit
+            bed_pad   = max(0, -o) + deficit
+        """
+        bed = self._context_bed(playback, sample_rate)
+        o = self.context_offset_s
+        click_tempo = self._alignment_tempo()      # the TRACK's grid, not the spec's
+        need_s = max(0, int(count_in_beats)) * 60.0 / click_tempo
+        deficit_s = max(0.0, need_s - max(0.0, o))
+        drums_pad_s = max(0.0, o) + deficit_s
+        bed_pad_s = max(0.0, -o) + deficit_s
+        # normalize=False: the click is summed in below and must be inside the
+        # peak calculation, or a mixed preview with a count-in can exceed 1.0 and
+        # clip at the transport.
+        buf = playback.mix(
+            drums, bed, drums_gain=self._drums_gain, bed_gain=self._bed_gain,
+            drums_pad_frames=int(round(drums_pad_s * sample_rate)),
+            bed_pad_frames=int(round(bed_pad_s * sample_rate)),
+            normalize=False)
+        if count_in_beats > 0:
+            # Lay the click OVER the track's lead-in, ending exactly at the first
+            # downbeat, at the detected tempo — so it counts you into the TRACK.
+            click = playback.click_track(count_in_beats, click_tempo,
+                                         sample_rate=sample_rate)
+            buf = playback.overlay(
+                buf, click, int(round((drums_pad_s - need_s) * sample_rate)))
+        return playback.peak_normalize(buf), drums_pad_s
 
     @property
     def preview_offset(self):
@@ -693,7 +962,24 @@ class Controller:
         self._preview_offset = 0.0                 # auditions have no count-in
         return buf
 
-    def render_variation(self, seed, *, sample_rate=44100):
+    def context_snapshot(self, *, sample_rate=44100):
+        """An immutable snapshot of the mix state, taken on the UI thread and
+        handed to `render_variation` on a worker thread. Nothing a worker touches
+        may live on `self` — see `render_variation`'s purity contract.
+
+        Any re-decode for a differing sample rate happens HERE (on the caller's
+        thread), so the worker never triggers one.
+        """
+        if self._context_audio is None:
+            return None
+        from . import playback
+        bed = self._context_bed(playback, sample_rate)
+        return {"bed": bed, "offset_s": self.context_offset_s,
+                "drums_gain": self._drums_gain, "bed_gain": self._bed_gain,
+                "sample_rate": sample_rate}
+
+    def render_variation(self, seed, *, sample_rate=44100, with_context=False,
+                         context=None):
         """Render the CURRENT spec at an explicit `seed` to a standalone buffer,
         WITHOUT touching held spec/seed/preview (batch-variations / A-B compare).
         Pure (build_song + render_events) so it is safe to call off a worker
@@ -703,9 +989,34 @@ class Controller:
         spec = self._require_spec()
         events = engine.build_song(spec, seed=int(seed),
                                    output_map=engine.GENERAL_MIDI)
-        return playback.render_events(
+        buf = playback.render_events(
             events, tempo=spec.get("tempo") or engine.PROFILES[spec["profile"]]["tempo"],
             ppq=spec.get("ppq", 480), sample_rate=sample_rate)
+        if with_context:
+            snap = context if context is not None else \
+                self.context_snapshot(sample_rate=sample_rate)
+            if snap is not None:
+                buf = self._mix_variation(playback, buf, snap)
+        return buf
+
+    @staticmethod
+    def _mix_variation(playback, drums, snap):
+        """Mix ONE variation over only the span of the track the drums cover.
+
+        Mixing the full track into every variation would hold a complete copy of
+        the audio per seed (~84MB per 4-minute track, times N seeds). The
+        audition only ever plays the drums' own span, so the bed is sliced to it.
+
+        Static and snapshot-driven ON PURPOSE: it runs on the variations worker
+        thread, so it must not read (or write) any controller attribute.
+        """
+        sr = snap["sample_rate"]
+        o = snap["offset_s"]
+        start = int(round(max(0.0, o) * sr))
+        bed_slice = snap["bed"][start:start + len(drums)]
+        return playback.mix(drums, bed_slice,
+                            drums_gain=snap["drums_gain"], bed_gain=snap["bed_gain"],
+                            bed_pad_frames=int(round(max(0.0, -o) * sr)))
 
     def play_buffer(self, buf, sample_rate=44100):
         """Play an arbitrary pre-rendered buffer (a batch/A-B variation) through the
@@ -713,10 +1024,19 @@ class Controller:
         the main play()."""
         from . import playback
         self._play_base = 0.0
+        self._play_head_s = 0.0
         if self._player is None:
             self._player = playback.Player()
         self._player.load(buf, sample_rate)
         self._player.play()
+
+    @property
+    def playhead_offset(self):
+        """Seconds of the CURRENTLY PLAYING buffer that sit before musical tick 0.
+        The playhead subtracts this. Distinct from `preview_offset`, which
+        describes the held preview buffer: a section slice has its head cut off
+        (0) while the held buffer keeps its own."""
+        return self._play_head_s
 
     @property
     def play_base(self):
@@ -746,9 +1066,21 @@ class Controller:
         if section_index + 1 < len(markers):
             end_s = head + int(round(markers[section_index + 1][0] * sec_per_tick * sr))
         else:
-            end_s = self._preview_buf.shape[0]           # last section -> incl. tail
+            # Last section: run to the END OF THE DRUMS plus the render tail, NOT
+            # to the end of the buffer — a context mix leaves the rest of the
+            # track sitting in the buffer, which would audition minutes of bare
+            # backing track.
+            # The tail is part of EVERY render (render_events(tail=...)), mixed or
+            # dry — the min() below handles a buffer that is shorter.
+            end_ticks = engine.song_ticks(spec)
+            end_s = head + int(round(
+                (end_ticks * sec_per_tick + playback.RENDER_TAIL_S) * sr))
+        end_s = min(end_s, self._preview_buf.shape[0])
         clip = self._preview_buf[start_s:end_s]
-        self._preview_offset = 0.0                       # the slice has no count-in
+        # The SLICE has no head — but `_preview_offset` describes the held preview
+        # buffer, which is unchanged, so it must not be zeroed here (a second
+        # play_section on the same buffer would then slice from the wrong frame).
+        self._play_head_s = 0.0
         self._play_base = start_tick * sec_per_tick      # playhead offset back to grid
         if self._player is None:
             self._player = playback.Player()
@@ -764,6 +1096,7 @@ class Controller:
                 raise ValueError("nothing to play: no rendered preview and no spec")
             self.render_preview(with_context=with_context)
         self._play_base = 0.0                        # full song starts at musical 0
+        self._play_head_s = self._preview_offset     # head of the buffer being played
         if self._player is None:
             self._player = playback.Player()
         self._player.load(self._preview_buf, self._preview_sr)

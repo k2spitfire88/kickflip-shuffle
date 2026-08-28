@@ -1,4 +1,4 @@
-"""py2app build config for Kickflip Shuffle — unsigned macOS .app (beta 0.9.0).
+"""py2app build config for Kickflip Shuffle — unsigned macOS .app (beta 0.9.1).
 
 Build:
     .venv/bin/python setup.py py2app
@@ -33,8 +33,8 @@ OPTIONS = {
         "CFBundleName": "Kickflip Shuffle",
         "CFBundleDisplayName": "Kickflip Shuffle",
         "CFBundleIdentifier": "com.kickflipshuffle.app",
-        "CFBundleShortVersionString": "0.9.0",
-        "CFBundleVersion": "0.9.0",
+        "CFBundleShortVersionString": "0.9.1",
+        "CFBundleVersion": "0.9.1",
         "NSHighResolutionCapable": True,
         "LSMinimumSystemVersion": "12.0",
     },
